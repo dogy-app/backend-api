@@ -44,7 +44,7 @@ async def upload_image(file: UploadFile = File(...), name: str = Query(None)):
         # Get the URL of the uploaded file
         blob_url = blob_client.url
 
-        return JSONResponse(content={"url": blob_url})
+        return JSONResponse(content={"url": blob_url, "image_name": blob_name})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
