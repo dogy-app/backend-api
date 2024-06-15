@@ -21,7 +21,7 @@ app = FastAPI()
 async def api_entry():
     return {"message": "Dogy Backend API"}
 
-@app.post("/upload/")
+@app.post("/upload_image/")
 async def upload_image(file: UploadFile = File(...), name: str = Query(None)):
     try:
         # Extract the file extension
@@ -48,7 +48,7 @@ async def upload_image(file: UploadFile = File(...), name: str = Query(None)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/list/")
+@app.get("/list_images/")
 async def list_images():
     try:
         # Get the container client
@@ -64,7 +64,7 @@ async def list_images():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/delete/")
+@app.delete("/delete_image/")
 async def delete_image(name: str = Query(...)):
     try:
         # Create a unique name for the blob, replacing spaces with underscores
