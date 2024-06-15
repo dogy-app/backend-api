@@ -1,19 +1,6 @@
-import os
-import uuid
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
-from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
-from dotenv import load_dotenv
 from starlette.responses import JSONResponse
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Azure storage connection string and container name
-AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")
-
-# Initialize the BlobServiceClient
-blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
+from blobs import generate_blob_name, upload_blob, list_blobs, delete_blob
 
 app = FastAPI()
 
@@ -24,25 +11,11 @@ async def api_entry():
 @app.post("/upload_image/")
 async def upload_image(file: UploadFile = File(...), name: str = Query(None)):
     try:
-        # Extract the file extension
-        file_extension = os.path.splitext(file.filename)[1]
+        # Generate a unique blob name
+        blob_name = generate_blob_name(file.filename, name)
 
-        # Create a unique name for the blob, replacing spaces with underscores
-        base_name = name.replace(" ", "_") if name else file.filename.replace(" ", "_")
-
-        # Generate a unique identifier
-        unique_id = str(uuid.uuid4())
-
-        # Construct the blob name with the unique identifier
-        blob_name = f"{base_name}_{unique_id}{file_extension}"
-
-        blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=blob_name)
-
-        # Upload the file to Azure Blob Storage, overwriting if it exists
-        blob_client.upload_blob(file.file, overwrite=True)
-
-        # Get the URL of the uploaded file
-        blob_url = blob_client.url
+        # Upload the file to Azure Blob Storage
+        blob_url = upload_blob(file.file, blob_name)
 
         return JSONResponse(content={"url": blob_url, "image_name": blob_name})
     except Exception as e:
@@ -51,15 +24,8 @@ async def upload_image(file: UploadFile = File(...), name: str = Query(None)):
 @app.get("/list_images/")
 async def list_images():
     try:
-        # Get the container client
-        container_client = blob_service_client.get_container_client(AZURE_CONTAINER_NAME)
-
         # List all blobs in the container
-        blobs = container_client.list_blobs()
-
-        # Get the URLs of the blobs
-        blob_urls = [container_client.get_blob_client(blob).url for blob in blobs]
-
+        blob_urls = list_blobs()
         return JSONResponse(content={"urls": blob_urls})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -67,13 +33,12 @@ async def list_images():
 @app.delete("/delete_image/")
 async def delete_image(name: str = Query(...)):
     try:
-        # Create a unique name for the blob, replacing spaces with underscores
+        # Replace spaces with underscores in the blob name
         blob_name = name.replace(" ", "_")
-        blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=blob_name)
 
         # Delete the blob
-        blob_client.delete_blob()
+        message = delete_blob(blob_name)
 
-        return JSONResponse(content={"message": f"Blob '{blob_name}' deleted successfully."})
+        return JSONResponse(content={"message": message})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
