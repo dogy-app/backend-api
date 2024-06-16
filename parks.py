@@ -35,10 +35,16 @@ def fetch_dog_parks_in_country(country):
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         print(f"Error querying Overpass API: {e}")
-        raise
+        return [], 0, 0
 
     data = response.json()
+    if 'elements' not in data:
+        print("No elements found in Overpass API response")
+        return [], 0, 0
+
     parks = []
+    total_found = len(data['elements'])
+    total_uploaded = 0
 
     for element in data.get('elements', []):
         name = element['tags'].get('name', 'Unnamed Dog Park')
@@ -46,21 +52,28 @@ def fetch_dog_parks_in_country(country):
         lon = element.get('lon') or element.get('center', {}).get('lon')
 
         city = fetch_nearest_city(lat, lon)
-        image_url = fetch_park_image_and_upload(name, city, country)
 
         park_data = {
             "name": name,
             "city": city,
-            "image": image_url,
+            "image": None,  # Image will be uploaded later if not duplicate
             "location": [lat, lon],
             "country": country,
             "visitedBy": []
         }
-        upload_to_firestore(park_data)
-        parks.append(park_data)
 
-    print(f"Found {len(parks)} parks")  # Debug print
-    return parks
+        # Check for duplicates using lat and lon
+        if not is_duplicate_park(lat, lon):
+            image_url = fetch_park_image_and_upload(name, city, country)
+            park_data["image"] = image_url
+            upload_to_firestore(park_data)
+            parks.append(park_data)
+            total_uploaded += 1
+        else:
+            print(f"Duplicate park found at coordinates: {lat}, {lon}")
+
+    print(f"Found {total_found} parks in {country}, uploaded {total_uploaded} to Firestore")  # Debug print
+    return parks, total_found, total_uploaded
 
 def fetch_nearest_city(lat, lon):
     params = {
@@ -76,6 +89,9 @@ def fetch_nearest_city(lat, lon):
         return "Unknown"
 
     data = response.json()
+    if 'results' not in data:
+        print("No results found in Google Geocode API response")
+        return "Unknown"
 
     for result in data.get('results', []):
         for component in result['address_components']:
@@ -109,11 +125,14 @@ def fetch_park_image_and_upload(name, city, country):
         return None
 
     data = response.json()
-    if data.get("candidates"):
-        photo_reference = data["candidates"][0].get("photos", [{}])[0].get("photo_reference")
-        if photo_reference:
-            photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={photo_reference}&key={GOOGLE_API_KEY}"
-            return upload_image_to_azure(photo_url, name)
+    if not data.get("candidates"):
+        print("No candidates found in Google Places API response")
+        return None
+
+    photo_reference = data["candidates"][0].get("photos", [{}])[0].get("photo_reference")
+    if photo_reference:
+        photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={photo_reference}&key={GOOGLE_API_KEY}"
+        return upload_image_to_azure(photo_url, name)
 
     return None
 
@@ -147,6 +166,14 @@ def generate_blob_name(name, extension):
     unique_id = uuid.uuid4()
     sanitized_name = name.replace(' ', '_').lower()
     return f"{sanitized_name}_{unique_id}{extension}"
+
+def is_duplicate_park(lat, lon):
+    try:
+        docs = db.collection('new_parks').where('location', '==', [lat, lon]).get()
+        return len(docs) > 0
+    except Exception as e:
+        print(f"Error checking for duplicate parks: {e}")
+        return False
 
 def upload_to_firestore(park_data):
     try:

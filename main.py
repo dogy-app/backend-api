@@ -49,11 +49,15 @@ async def delete_image(name: str = Query(...)):
 @app.get("/fetch_parks/")
 async def fetch_parks(country: str = Query(...)):
     try:
-        parks = fetch_dog_parks_in_country(country)
+        parks, total_found, total_uploaded = fetch_dog_parks_in_country(country)
         if not parks:
             print("No parks found")  # Debug print
 
-        return JSONResponse(content={"parks": parks, "total": len(parks)})
+        return JSONResponse(content={
+            "parks": parks,
+            "total_found": total_found,
+            "total_uploaded": total_uploaded
+        })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
