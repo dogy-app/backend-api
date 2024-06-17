@@ -1,8 +1,11 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from starlette.responses import JSONResponse
 import uvicorn
+import pygeohash as pgh
 from blobs import generate_blob_name, upload_blob, list_blobs, delete_blob
 from parks import fetch_dog_parks_in_country
+from firebase_setup import db  # Import the Firestore client
+
 
 app = FastAPI()
 
@@ -58,6 +61,24 @@ async def fetch_parks(country: str = Query(...)):
             "total_found": total_found,
             "total_uploaded": total_uploaded
         })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/update_geohashes/")
+async def update_geohashes():
+    try:
+        parks_ref = db.collection('new_parks')
+        parks = parks_ref.stream()
+
+        for park in parks:
+            park_data = park.to_dict()
+            location = park_data.get("location")
+            if location:
+                lat, lon = location
+                geohash = pgh.encode(lat, lon)
+                parks_ref.document(park.id).update({"geohash": geohash})
+
+        return {"message": "Geohashes updated successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

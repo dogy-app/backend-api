@@ -5,7 +5,8 @@ from azure.storage.blob import BlobServiceClient
 from io import BytesIO
 import uuid
 import mimetypes
-from firebase_setup import db  # Import the Firestore client
+from firebase_setup import db
+import pygeohash as pgh
 
 load_dotenv()
 
@@ -19,26 +20,32 @@ AZURE_STORAGE_CONTAINER_NAME = os.getenv("AZURE_PARK_CONTAINER_NAME")
 blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
 
 def fetch_dog_parks_in_country(country):
-    query = f"""
-    [out:json][timeout:1800];
-    area["name"="{country}"]["boundary"="administrative"]["admin_level"="2"]->.searchArea;
-    (
-      node["leisure"="dog_park"](area.searchArea);
-      way["leisure"="dog_park"](area.searchArea);
-      relation["leisure"="dog_park"](area.searchArea);
-    );
-    out center;
-    """
+    queries = [
+        f"""
+        [out:json][timeout:1800];
+        area["name"="{country}"]["boundary"="administrative"]["admin_level"="2"]->.searchArea;
+        (
+          node["leisure"="dog_park"](area.searchArea);
+          way["leisure"="dog_park"](area.searchArea);
+          relation["leisure"="dog_park"](area.searchArea);
+        );
+        out center;
+        """
+    ]
 
-    try:
-        response = requests.post(OVERPASS_API_URL, data={'data': query})
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        print(f"Error querying Overpass API: {e}")
-        return [], 0, 0
+    data = None
+    for query in queries:
+        try:
+            response = requests.post(OVERPASS_API_URL, data={'data': query})
+            response.raise_for_status()
+            data = response.json()
+            if 'elements' in data and len(data['elements']) > 0:
+                break
+        except requests.exceptions.RequestException as e:
+            print(f"Error querying Overpass API: {e}")
+            continue
 
-    data = response.json()
-    if 'elements' not in data:
+    if not data or 'elements' not in data or len(data['elements']) == 0:
         print("No elements found in Overpass API response")
         return [], 0, 0
 
@@ -52,6 +59,7 @@ def fetch_dog_parks_in_country(country):
         lon = element.get('lon') or element.get('center', {}).get('lon')
 
         city = fetch_nearest_city(lat, lon)
+        geohash = pgh.encode(lat, lon)  # Add geohash to park data
 
         park_data = {
             "name": name,
@@ -59,7 +67,8 @@ def fetch_dog_parks_in_country(country):
             "image": None,  # Image will be uploaded later if not duplicate
             "location": [lat, lon],
             "country": country,
-            "visitedBy": []
+            "visitedBy": [],
+            "geohash": geohash  # Add geohash to park data
         }
 
         # Check for duplicates using lat and lon
@@ -170,6 +179,7 @@ def generate_blob_name(name, extension):
 def is_duplicate_park(lat, lon):
     try:
         docs = db.collection('new_parks').where('location', '==', [lat, lon]).get()
+        print(f"Duplicate check for coordinates: {lat}, {lon} - {len(docs)} duplicates found")
         return len(docs) > 0
     except Exception as e:
         print(f"Error checking for duplicate parks: {e}")
