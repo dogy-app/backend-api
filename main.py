@@ -1,10 +1,11 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from starlette.responses import JSONResponse
-import uvicorn
-import pygeohash as pgh
 from blobs import generate_blob_name, upload_blob, list_blobs, delete_blob
 from firebase_setup import db
 from search_parks import search_dog_parks
+from speech_to_text import get_transcription
+import uvicorn
+import pygeohash as pgh
 
 app = FastAPI()
 
@@ -73,6 +74,15 @@ async def search_dog_parks_endpoint(location: str = Query(...), grid_size: int =
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Speech-to-text
+@app.post("/audio/transcriptions/create")
+async def upload_audio(file: UploadFile = File(...)):
+    try:
+        transcription = get_transcription(file.filename)
+
+        return JSONResponse(content={"response": transcription.text}, status_code=200)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 
 if __name__ == "__main__":
