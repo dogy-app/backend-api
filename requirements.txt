@@ -27,6 +27,7 @@ google-cloud-storage==2.17.0
 google-crc32c==1.5.0
 google-resumable-media==2.7.1
 googleapis-common-protos==1.63.1
+googlemaps==4.10.0
 grpcio==1.64.1
 grpcio-status==1.62.2
 h11==0.14.0
