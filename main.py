@@ -3,9 +3,8 @@ from starlette.responses import JSONResponse
 import uvicorn
 import pygeohash as pgh
 from blobs import generate_blob_name, upload_blob, list_blobs, delete_blob
-from parks import fetch_dog_parks_in_country
-from firebase_setup import db  # Import the Firestore client
-
+from firebase_setup import db
+from search_parks import search_dog_parks
 
 app = FastAPI()
 
@@ -49,22 +48,6 @@ async def delete_image(name: str = Query(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 # === PARKS ===
-@app.get("/fetch_parks/")
-async def fetch_parks(country: str = Query(...)):
-    try:
-        parks, total_found, total_uploaded = fetch_dog_parks_in_country(country)
-        if not parks:
-            print("No parks found")  # Debug print
-
-        return JSONResponse(content={
-            "parks": parks,
-            "total_found": total_found,
-            "total_uploaded": total_uploaded
-        })
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/update_geohashes/")
 async def update_geohashes():
     try:
         parks_ref = db.collection('new_parks')
@@ -81,6 +64,16 @@ async def update_geohashes():
         return {"message": "Geohashes updated successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/search_dog_parks/")
+async def search_dog_parks_endpoint(location: str = Query(...), grid_size: int = Query(5000), results_limit: int = Query(None)):
+    try:
+        results = search_dog_parks(location, grid_size, results_limit)
+        return JSONResponse(content={"results": results})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
