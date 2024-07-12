@@ -77,7 +77,16 @@ async def search_dog_parks_endpoint(location: str = Query(...), grid_size: int =
 # Speech-to-text
 @app.post("/audio/transcriptions/create")
 async def upload_audio(file: UploadFile = File(...)):
+    """
+    Upload an audio file and get its transcription
+
+    :param file: Audio file to transcribe
+    :type file: UploadFile
+    :return: Transcription of the audio file
+    """
+
     try:
+        # Get the filepath of the audio file and get its transcription
         transcription = get_transcription(file.filename)
 
         return JSONResponse(content={"response": transcription.text}, status_code=200)
