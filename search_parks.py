@@ -3,24 +3,16 @@ import os
 from dotenv import load_dotenv
 import time
 from math import radians, cos, sin, asin, sqrt
-import requests
-from io import BytesIO
-import mimetypes
 import pygeohash as pgh
-from azure.storage.blob import BlobServiceClient
 from firebase_setup import db
+from helpers import upload_image_to_azure
 
 load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-AZURE_STORAGE_CONTAINER_NAME = os.getenv("AZURE_PARK_CONTAINER_NAME")
 
 # Initialize the Google Maps client with your API key
 gmaps = googlemaps.Client(key=GOOGLE_API_KEY)
-
-# Initialize the Azure Blob service client
-blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
 
 def get_bounding_box(api_key, location):
     gmaps = googlemaps.Client(key=api_key)
@@ -91,31 +83,6 @@ def create_grid(bounding_box, grid_size=5000):
 def get_photo_url(photo_reference, api_key, max_width=400):
     return f"https://maps.googleapis.com/maps/api/place/photo?maxwidth={max_width}&photoreference={photo_reference}&key={api_key}"
 
-def upload_image_to_azure(photo_url, name):
-    try:
-        response = requests.get(photo_url)
-        response.raise_for_status()
-        image_data = BytesIO(response.content)
-
-        content_type = response.headers.get('Content-Type')
-        file_extension = mimetypes.guess_extension(content_type)
-
-        if not file_extension:
-            print(f"Unknown file extension for content type {content_type}")
-            file_extension = '.jpg'
-
-        blob_name = f"{name.replace(' ', '_')}{file_extension}"
-        blob_client = blob_service_client.get_blob_client(container=AZURE_STORAGE_CONTAINER_NAME, blob=blob_name)
-        blob_client.upload_blob(image_data, overwrite=True)
-        blob_url = blob_client.url
-        print(f"Uploaded image to Azure: {blob_url}")
-        return blob_url
-    except requests.exceptions.RequestException as e:
-        print(f"Error downloading image: {e}")
-        return None
-    except Exception as e:
-        print(f"Error uploading image to Azure: {e}")
-        return None
 
 def extract_parks(results, city, country):
     parks = []

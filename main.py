@@ -1,18 +1,24 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, Query
+#main.py
+from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Body
 from starlette.responses import JSONResponse
-from blobs import generate_blob_name, upload_blob, list_blobs, delete_blob
-from firebase_setup import db
-from search_parks import search_dog_parks
-from speech_to_text import get_transcription
+from typing import List, Optional
+from pydantic import BaseModel
 import uvicorn
 import pygeohash as pgh
+from firebase_setup import db
+from blobs import generate_blob_name, upload_blob, list_blobs, delete_blob
+from search_parks import search_dog_parks
+from speech_to_text import get_transcription
+from parks import fetch_parks, add_new_park, edit_park, delete_park
 
 app = FastAPI()
 
+# Entry
 @app.get("/")
 async def api_entry():
     return {"message": "Dogy Backend API"}
 
+# Upload pet image
 @app.post("/upload_image/")
 async def upload_image(file: UploadFile = File(...), name: str = Query(None)):
     try:
@@ -26,6 +32,7 @@ async def upload_image(file: UploadFile = File(...), name: str = Query(None)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# List pet images
 @app.get("/list_images/")
 async def list_images():
     try:
@@ -35,6 +42,7 @@ async def list_images():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Delete pet image
 @app.delete("/delete_image/")
 async def delete_image(name: str = Query(...)):
     try:
@@ -49,6 +57,49 @@ async def delete_image(name: str = Query(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 # === PARKS ===
+class Park(BaseModel):
+    name: str
+    country: str
+    address: str
+    city: str
+    location: List[float]
+    image: Optional[str] = None
+
+@app.get("/fetch_parks/")
+async def fetch_parks_endpoint():
+    try:
+        parks = fetch_parks()
+        parks_data = [park.to_dict() for park in parks]
+        return JSONResponse(content={"parks": parks_data})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/parks/")
+async def add_park_endpoint(park: Park):
+    try:
+        park_data = park.dict()
+        add_new_park(park_data)
+        return JSONResponse(content={"message": "Park added successfully"})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/parks/{park_id}")
+async def edit_park_endpoint(park_id: str, park: Park):
+    try:
+        park_data = park.dict()
+        edit_park(park_id, park_data)
+        return JSONResponse(content={"message": "Park updated successfully"})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/parks/{park_id}")
+async def delete_park_endpoint(park_id: str):
+    try:
+        delete_park(park_id)
+        return JSONResponse(content={"message": "Park deleted successfully"})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 async def update_geohashes():
     try:
         parks_ref = db.collection('new_parks')
@@ -66,6 +117,7 @@ async def update_geohashes():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Search dog parks on Google Maps
 @app.post("/search_dog_parks/")
 async def search_dog_parks_endpoint(location: str = Query(...), grid_size: int = Query(5000), results_limit: int = Query(None)):
     try:
@@ -92,7 +144,6 @@ async def upload_audio(file: UploadFile = File(...)):
         return JSONResponse(content={"response": transcription.text}, status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
-
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
