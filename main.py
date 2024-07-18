@@ -157,23 +157,21 @@ class NotificationRequest(BaseModel):
     platform: str  # Should be 'fcm' for Android and 'apns' for iOS
     notification: Notification
 
-# Register device
 @app.post("/register_device")
 async def register_device_endpoint(device_token: DeviceToken):
     try:
         response = await register_device(device_token.token, device_token.platform, device_token.tags)
         return response
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
 
-# Send notification
 @app.post("/send_notification")
 async def send_notification_endpoint(request: NotificationRequest):
     try:
         response = await send_notification(request.device_token, request.platform, request.notification)
         return response
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
