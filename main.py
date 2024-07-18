@@ -10,6 +10,7 @@ from blobs import generate_blob_name, upload_blob, list_blobs, delete_blob
 from search_parks import search_dog_parks
 from speech_to_text import get_transcription
 from parks import fetch_parks, add_new_park, edit_park, delete_park
+from notifications import register_device, send_notification, Notification
 
 app = FastAPI()
 
@@ -144,6 +145,35 @@ async def upload_audio(file: UploadFile = File(...)):
         return JSONResponse(content={"response": transcription.text}, status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+# NOTIFICATIONS
+class DeviceToken(BaseModel):
+    token: str
+    platform: str  # Should be 'fcm' for Android and 'apns' for iOS
+    tags: list = None
+
+class NotificationRequest(BaseModel):
+    device_token: str
+    platform: str  # Should be 'fcm' for Android and 'apns' for iOS
+    notification: Notification
+
+# Register device
+@app.post("/register_device")
+async def register_device_endpoint(device_token: DeviceToken):
+    try:
+        response = await register_device(device_token.token, device_token.platform, device_token.tags)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Send notification
+@app.post("/send_notification")
+async def send_notification_endpoint(request: NotificationRequest):
+    try:
+        response = await send_notification(request.device_token, request.platform, request.notification)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
