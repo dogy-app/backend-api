@@ -30,8 +30,7 @@ def display_parks(parks):
         print(f"Park Data: {park.to_dict()}")
         print("------")
 
-def find_park_by_location(lat, lng):
-    geohash = pgh.encode(float(lat), float(lng))
+def find_park_by_geohash(geohash):
     parks_ref = db.collection('new_parks')
     query = parks_ref.where('geohash', '==', geohash).stream()
     for park in query:
@@ -41,14 +40,12 @@ def find_park_by_location(lat, lng):
 def add_new_park(new_park_data):
     try:
         lat, lng = map(float, new_park_data['location'])
-        existing_park = find_park_by_location(lat, lng)
+        geohash = pgh.encode(lat, lng)
+        existing_park = find_park_by_geohash(geohash)
 
         if existing_park:
             print("Park already exists. Please use the update method instead.")
             return
-
-        # Generate geohash based on location
-        geohash = pgh.encode(lat, lng)
 
         # Upload image if provided and not already uploaded
         image_url = None
@@ -78,15 +75,15 @@ def add_new_park(new_park_data):
     except Exception as e:
         print(f"Error adding park: {e}")
 
-def edit_park(park_id, updated_park_data):
+def edit_park_by_geohash(geohash, updated_park_data):
     try:
-        park_ref = db.collection('new_parks').document(park_id)
-        park = park_ref.get()
+        park = find_park_by_geohash(geohash)
 
-        if not park.exists:
-            print(f"Park with ID {park_id} does not exist.")
+        if not park:
+            print(f"Park with geohash {geohash} does not exist.")
             return
 
+        park_ref = db.collection('new_parks').document(park.id)
         update_data = {}
         existing_park_data = park.to_dict()
 
@@ -123,24 +120,24 @@ def edit_park(park_id, updated_park_data):
         # Update Firestore document if there is any new data to update
         if update_data:
             park_ref.update(update_data)
-            print(f"Updated park: {park_id} with data: {update_data}")
+            print(f"Updated park with geohash: {geohash} with data: {update_data}")
         else:
             print("No new data to update.")
 
     except Exception as e:
         print(f"Error editing park: {e}")
 
-def delete_park(park_id):
+def delete_park_by_geohash(geohash):
     try:
-        park_ref = db.collection('new_parks').document(park_id)
-        park = park_ref.get()
+        park = find_park_by_geohash(geohash)
 
-        if not park.exists:
-            print(f"Park with ID {park_id} does not exist.")
+        if not park:
+            print(f"Park with geohash {geohash} does not exist.")
             return
 
+        park_ref = db.collection('new_parks').document(park.id)
         park_ref.delete()
-        print(f"Deleted park with ID: {park_id}")
+        print(f"Deleted park with geohash: {geohash}")
 
     except Exception as e:
         print(f"Error deleting park: {e}")
@@ -154,10 +151,10 @@ if __name__ == "__main__":
     add_parser = subparsers.add_parser('add', help='Add a new park')
 
     edit_parser = subparsers.add_parser('edit', help='Edit a predefined park')
-    edit_parser.add_argument('id', type=str, help='ID of the park to edit')
+    edit_parser.add_argument('geohash', type=str, help='Geohash of the park to edit')
 
     delete_parser = subparsers.add_parser('delete', help='Delete a park')
-    delete_parser.add_argument('id', type=str, help='ID of the park to delete')
+    delete_parser.add_argument('geohash', type=str, help='Geohash of the park to delete')
 
     args = parser.parse_args()
 
@@ -187,8 +184,8 @@ if __name__ == "__main__":
     elif args.command == 'add':
         add_new_park(new_park_data)
     elif args.command == 'edit':
-        edit_park(args.id, updated_park_data)
+        edit_park_by_geohash(args.geohash, updated_park_data)
     elif args.command == 'delete':
-        delete_park(args.id)
+        delete_park_by_geohash(args.geohash)
     else:
         parser.print_help()

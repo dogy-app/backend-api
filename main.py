@@ -1,4 +1,3 @@
-#main.py
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Body
 from starlette.responses import JSONResponse
 from typing import List, Optional
@@ -9,8 +8,7 @@ from firebase_setup import db
 from blobs import generate_blob_name, upload_blob, list_blobs, delete_blob
 from search_parks import search_dog_parks
 from speech_to_text import get_transcription
-from parks import fetch_parks, add_new_park, edit_park, delete_park
-from notifications import register_device, send_notification, Notification
+from parks import fetch_parks, add_new_park, edit_park_by_geohash, delete_park_by_geohash
 
 app = FastAPI()
 
@@ -66,7 +64,7 @@ class Park(BaseModel):
     location: List[float]
     image: Optional[str] = None
 
-@app.get("/fetch_parks/")
+@app.get("/parks/fetch/")
 async def fetch_parks_endpoint():
     try:
         parks = fetch_parks()
@@ -75,7 +73,7 @@ async def fetch_parks_endpoint():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/parks/")
+@app.post("/parks/add/")
 async def add_park_endpoint(park: Park):
     try:
         park_data = park.dict()
@@ -84,19 +82,19 @@ async def add_park_endpoint(park: Park):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.put("/parks/{park_id}")
-async def edit_park_endpoint(park_id: str, park: Park):
+@app.put("/parks/{geohash}")
+async def edit_park_endpoint(geohash: str, park: Park):
     try:
         park_data = park.dict()
-        edit_park(park_id, park_data)
+        edit_park_by_geohash(geohash, park_data)
         return JSONResponse(content={"message": "Park updated successfully"})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/parks/{park_id}")
-async def delete_park_endpoint(park_id: str):
+@app.delete("/parks/{geohash}")
+async def delete_park_endpoint(geohash: str):
     try:
-        delete_park(park_id)
+        delete_park_by_geohash(geohash)
         return JSONResponse(content={"message": "Park deleted successfully"})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -145,33 +143,6 @@ async def upload_audio(file: UploadFile = File(...)):
         return JSONResponse(content={"response": transcription.text}, status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
-
-# NOTIFICATIONS
-class DeviceToken(BaseModel):
-    token: str
-    platform: str  # Should be 'fcm' for Android and 'apns' for iOS
-    tags: list = None
-
-class NotificationRequest(BaseModel):
-    device_token: str
-    platform: str  # Should be 'fcm' for Android and 'apns' for iOS
-    notification: Notification
-
-@app.post("/register_device")
-async def register_device_endpoint(device_token: DeviceToken):
-    try:
-        response = await register_device(device_token.token, device_token.platform, device_token.tags)
-        return response
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
-
-@app.post("/send_notification")
-async def send_notification_endpoint(request: NotificationRequest):
-    try:
-        response = await send_notification(request.device_token, request.platform, request.notification)
-        return response
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
