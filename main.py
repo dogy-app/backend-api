@@ -9,6 +9,8 @@ from blobs import generate_blob_name, upload_blob, list_blobs, delete_blob
 from search_parks import search_dog_parks
 from speech_to_text import get_transcription
 from parks import fetch_parks, add_new_park, edit_park_by_geohash, delete_park_by_geohash
+from notifications import send_notification, register_device, PushNotification, DeviceRegistration
+
 
 app = FastAPI()
 
@@ -143,6 +145,23 @@ async def upload_audio(file: UploadFile = File(...)):
         return JSONResponse(content={"response": transcription.text}, status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+# === NOTIFICATIONS ===
+
+class PushNotification(BaseModel):
+    title: str
+    body: str
+    token: str
+
+# Register device
+@app.post("/notifications/register-device/")
+async def register_device_endpoint(device: DeviceRegistration):
+    return register_device(device)
+
+# Send notification
+@app.post("/notifications/send-notification/")
+async def send_notification_endpoint(notification: PushNotification):
+    return send_notification(notification)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
