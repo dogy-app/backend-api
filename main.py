@@ -9,8 +9,7 @@ from blobs import generate_blob_name, upload_blob, list_blobs, delete_blob
 from search_parks import search_dog_parks
 from speech_to_text import get_transcription
 from parks import fetch_parks, add_new_park, edit_park_by_geohash, delete_park_by_geohash
-from notifications import send_notification, register_device, PushNotification, DeviceRegistration
-
+import notifications
 
 app = FastAPI()
 
@@ -147,21 +146,57 @@ async def upload_audio(file: UploadFile = File(...)):
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 # === NOTIFICATIONS ===
+class DeviceRegistration(BaseModel):
+    device_token: str
+    device_type: int
 
-class PushNotification(BaseModel):
-    title: str
-    body: str
-    token: str
+class ChannelSubscription(BaseModel):
+    device_token: str
+    channel_tag: str
 
-# Register device
-@app.post("/notifications/register-device/")
-async def register_device_endpoint(device: DeviceRegistration):
-    return register_device(device)
+class NotificationMessage(BaseModel):
+    message: str
+    channel_tag: str = None
 
-# Send notification
-@app.post("/notifications/send-notification/")
-async def send_notification_endpoint(notification: PushNotification):
-    return send_notification(notification)
+# register_device
+@app.post("/notifications/register_device/")
+async def register_device(device_registration: DeviceRegistration):
+    response = notifications.register_device(device_registration.device_token, device_registration.device_type)
+
+    if response.status_code == 200:
+        return {"message": "Device registered successfully"}
+    else:
+        raise HTTPException(status_code=response.status_code, detail=response.json())
+
+# subscribe_to_channel
+@app.post("/notifications/subscribe_to_channel/")
+async def subscribe_to_channel(subscription: ChannelSubscription):
+    response = notifications.subscribe_to_channel(subscription.device_token, subscription.channel_tag)
+
+    if response.status_code == 200:
+        return {"message": "Subscribed to channel successfully"}
+    else:
+        raise HTTPException(status_code=response.status_code, detail=response.json())
+
+# unsubscribe_from_channel
+@app.post("/notifications/unsubscribe_from_channel/")
+async def unsubscribe_from_channel(subscription: ChannelSubscription):
+    response = notifications.unsubscribe_from_channel(subscription.device_token, subscription.channel_tag)
+
+    if response.status_code == 200:
+        return {"message": "Unsubscribed from channel successfully"}
+    else:
+        raise HTTPException(status_code=response.status_code, detail=response.json())
+
+# send_notification
+@app.post("/notifications/send_notification/")
+async def send_notification(notification: NotificationMessage):
+    response = notifications.send_notification(notification.message, notification.channel_tag)
+
+    if response.status_code == 200:
+        return {"message": "Notification sent successfully"}
+    else:
+        raise HTTPException(status_code=response.status_code, detail=response.json())
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,55 +1,65 @@
 import os
 from dotenv import load_dotenv
-from pydantic import BaseModel
-from fastapi import HTTPException
-import ably
+import requests
 
 load_dotenv()
 
-ABLY_API_KEY = os.getenv("ABLY_API_KEY")
+ONESIGNAL_APP_ID = os.getenv("ONESIGNAL_APP_ID")
+ONESIGNAL_API_KEY = os.getenv("ONESIGNAL_API_KEY")
 
-ably_client = ably.AblyRest(ABLY_API_KEY)
+def register_device(device_token: str, device_type: int):
+    url = "https://onesignal.com/api/v1/players"
+    headers = {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": f"Basic {ONESIGNAL_API_KEY}"
+    }
+    payload = {
+        "app_id": ONESIGNAL_APP_ID,
+        "device_type": device_type,  # 1 for iOS, 2 for Android
+        "identifier": device_token
+    }
 
-class PushNotification(BaseModel):
-    title: str
-    body: str
-    token: str
+    response = requests.post(url, headers=headers, json=payload)
+    return response
 
-class PushRecipient(BaseModel):
-    transportType: str
-    deviceToken: str
+def subscribe_to_channel(device_token: str, channel_tag: str):
+    url = f"https://onesignal.com/api/v1/players/{device_token}"
+    headers = {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": f"Basic {ONESIGNAL_API_KEY}"
+    }
+    payload = {
+        "tags": {channel_tag: "subscribed"}
+    }
 
-class PushDetails(BaseModel):
-    recipient: PushRecipient
+    response = requests.put(url, headers=headers, json=payload)
+    return response
 
-class DeviceInfo(BaseModel):
-    manufacturer: str
-    model: str
-    os_version: str
-    app_version: str
+def unsubscribe_from_channel(device_token: str, channel_tag: str):
+    url = f"https://onesignal.com/api/v1/players/{device_token}"
+    headers = {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": f"Basic {ONESIGNAL_API_KEY}"
+    }
+    payload = {
+        "tags": {channel_tag: ""}
+    }
 
-class DeviceRegistration(BaseModel):
-    id: str
-    platform: str
-    form_factor: str
-    push: PushDetails
-    device_info: DeviceInfo
+    response = requests.put(url, headers=headers, json=payload)
+    return response
 
-def send_notification(notification: PushNotification):
-    try:
-        response = ably_client.push.admin.publish_device(notification.token, {
-            'notification': {
-                'title': notification.title,
-                'body': notification.body
-            }
-        })
-        return {"message": "Notification sent successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+def send_notification(message: str, channel_tag: str = None):
+    url = "https://onesignal.com/api/v1/notifications"
+    headers = {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": f"Basic {ONESIGNAL_API_KEY}"
+    }
+    payload = {
+        "app_id": ONESIGNAL_APP_ID,
+        "contents": {"en": message}
+    }
+    if channel_tag:
+        payload["filters"] = [{"field": "tag", "key": channel_tag, "relation": "=", "value": "subscribed"}]
 
-def register_device(device: DeviceRegistration):
-    try:
-        response = ably_client.push.admin.device_registrations.save(device.dict())
-        return {"message": "Device registered successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    response = requests.post(url, headers=headers, json=payload)
+    return response
