@@ -146,57 +146,55 @@ async def upload_audio(file: UploadFile = File(...)):
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 # === NOTIFICATIONS ===
-class DeviceRegistration(BaseModel):
-    device_token: str
-    device_type: int
-
 class ChannelSubscription(BaseModel):
     device_token: str
     channel_tag: str
 
 class NotificationMessage(BaseModel):
+    title: str
     message: str
     channel_tag: str = None
 
-# register_device
-@app.post("/notifications/register_device/")
-async def register_device(device_registration: DeviceRegistration):
-    response = notifications.register_device(device_registration.device_token, device_registration.device_type)
+class UserNotification(BaseModel):
+    title: str
+    message: str
+    user_id: str
 
-    if response.status_code == 200:
-        return {"message": "Device registered successfully"}
-    else:
-        raise HTTPException(status_code=response.status_code, detail=response.json())
-
-# subscribe_to_channel
 @app.post("/notifications/subscribe_to_channel/")
 async def subscribe_to_channel(subscription: ChannelSubscription):
     response = notifications.subscribe_to_channel(subscription.device_token, subscription.channel_tag)
 
     if response.status_code == 200:
-        return {"message": "Subscribed to channel successfully"}
+        return {"message": "Subscribed to channel successfully", "response": response.json()}
     else:
-        raise HTTPException(status_code=response.status_code, detail=response.json())
+        raise HTTPException(status_code=response.status_code, detail=response.text)
 
-# unsubscribe_from_channel
 @app.post("/notifications/unsubscribe_from_channel/")
 async def unsubscribe_from_channel(subscription: ChannelSubscription):
     response = notifications.unsubscribe_from_channel(subscription.device_token, subscription.channel_tag)
 
     if response.status_code == 200:
-        return {"message": "Unsubscribed from channel successfully"}
+        return {"message": "Unsubscribed from channel successfully", "response": response.json()}
     else:
-        raise HTTPException(status_code=response.status_code, detail=response.json())
+        raise HTTPException(status_code=response.status_code, detail=response.text)
 
-# send_notification
 @app.post("/notifications/send_notification/")
 async def send_notification(notification: NotificationMessage):
-    response = notifications.send_notification(notification.message, notification.channel_tag)
+    response = notifications.send_notification(notification.title, notification.message, notification.channel_tag)
 
     if response.status_code == 200:
-        return {"message": "Notification sent successfully"}
+        return {"message": "Notification sent successfully", "response": response.json()}
     else:
-        raise HTTPException(status_code=response.status_code, detail=response.json())
+        raise HTTPException(status_code=response.status_code, detail=response.text)
+
+@app.post("/notifications/send_notification_to_user/")
+async def send_notification_to_user(user_notification: UserNotification):
+    response = notifications.send_notification_to_user(user_notification.title, user_notification.message, user_notification.user_id)
+
+    if response.status_code == 200:
+        return {"message": "Notification sent to user successfully", "response": response.json()}
+    else:
+        raise HTTPException(status_code=response.status_code, detail=response.text)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
