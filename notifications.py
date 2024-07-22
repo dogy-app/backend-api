@@ -5,6 +5,7 @@ import requests
 import schedule
 import time
 import pytz
+import threading
 from firebase_setup import db
 from google.cloud.firestore import ArrayUnion
 
@@ -225,9 +226,31 @@ def daily_notification_job():
                 reminder.get('subtitle')
             )
 
-# Schedule the job daily at midnight UTC
-schedule.every().day.at("00:00").do(daily_notification_job)
+def daily_notification_job():
+    users_ref = db.collection('users')
+    users = users_ref.stream()
 
-while True:
-    schedule.run_pending()
-    time.sleep(1)
+    for user in users:
+        user_data = user.to_dict()
+        if 'daily_playtime_reminder' in user_data:
+            reminder = user_data['daily_playtime_reminder']
+            schedule_daily_notification(
+                user.id,
+                reminder['hour'],
+                reminder['minute'],
+                reminder['title'],
+                reminder['message'],
+                reminder['pet_name'],
+                reminder.get('subtitle')
+            )
+
+# Function to run the scheduler in a separate thread
+def run_scheduler():
+    schedule.every().day.at("00:00").do(daily_notification_job)
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+# Start the scheduler in a separate thread
+scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+scheduler_thread.start()
