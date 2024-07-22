@@ -134,7 +134,7 @@ def schedule_daily_notification(user_id: str, hour: int, minute: int, title: str
     try:
         user_ref = db.collection('users').document(user_id)
         user_doc = user_ref.get()
-        if not user_doc.exists:
+        if not user_doc.exists():
             return {"error": "User not found"}
         user_data = user_doc.to_dict()
         oneSignalPushIds = user_data.get('pushIDs', [])
@@ -165,7 +165,8 @@ def schedule_daily_notification(user_id: str, hour: int, minute: int, title: str
             "send_after": target_time.isoformat(),
             "delayed_option": "timezone",
             "delivery_time_of_day": f"{hour:02d}:{minute:02d}",
-            "ttl": 604800  # Time to live set to 7 days (7 * 24 * 60 * 60 seconds)
+            "ttl": 604800,  # Time to live set to 7 days (7 * 24 * 60 * 60 seconds)
+            "repeats": True  # This ensures the notification repeats
         }
         if subtitle:
             notification_data["subtitle"] = {"en": subtitle}
