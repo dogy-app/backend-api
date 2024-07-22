@@ -146,6 +146,10 @@ async def upload_audio(file: UploadFile = File(...)):
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 # === NOTIFICATIONS ===
+class DeviceRegistration(BaseModel):
+    user_id: str
+    oneSignalPushId: str
+
 class ChannelSubscription(BaseModel):
     device_token: str
     channel_tag: str
@@ -160,6 +164,27 @@ class UserNotification(BaseModel):
     message: str
     user_id: str
 
+class NotificationSchedule(BaseModel):
+    user_id: str
+    hour: int
+    minute: int
+    title: str
+    message: str
+    pet_name: str
+    subtitle: str = None
+
+class CancelNotification(BaseModel):
+    notification_id: str
+
+# Register a device
+@app.post("/notifications/register_device/")
+async def register_device(device_registration: DeviceRegistration):
+    response = notifications.register_device(device_registration.user_id, device_registration.oneSignalPushId)
+    if 'error' in response:
+        raise HTTPException(status_code=500, detail=response['error'])
+    return response
+
+# Subscribe to a channel
 @app.post("/notifications/subscribe_to_channel/")
 async def subscribe_to_channel(subscription: ChannelSubscription):
     response = notifications.subscribe_to_channel(subscription.device_token, subscription.channel_tag)
@@ -169,6 +194,7 @@ async def subscribe_to_channel(subscription: ChannelSubscription):
     else:
         raise HTTPException(status_code=response.status_code, detail=response.text)
 
+# Unsubscribe from a channel
 @app.post("/notifications/unsubscribe_from_channel/")
 async def unsubscribe_from_channel(subscription: ChannelSubscription):
     response = notifications.unsubscribe_from_channel(subscription.device_token, subscription.channel_tag)
@@ -178,6 +204,7 @@ async def unsubscribe_from_channel(subscription: ChannelSubscription):
     else:
         raise HTTPException(status_code=response.status_code, detail=response.text)
 
+# Send a notification to a channel
 @app.post("/notifications/send_notification/")
 async def send_notification(notification: NotificationMessage):
     response = notifications.send_notification(notification.title, notification.message, notification.channel_tag)
@@ -187,6 +214,7 @@ async def send_notification(notification: NotificationMessage):
     else:
         raise HTTPException(status_code=response.status_code, detail=response.text)
 
+# Send a notification to a specific user
 @app.post("/notifications/send_notification_to_user/")
 async def send_notification_to_user(user_notification: UserNotification):
     response = notifications.send_notification_to_user(user_notification.title, user_notification.message, user_notification.user_id)
@@ -195,6 +223,28 @@ async def send_notification_to_user(user_notification: UserNotification):
         return {"message": "Notification sent to user successfully", "response": response.json()}
     else:
         raise HTTPException(status_code=response.status_code, detail=response.text)
+
+# Schedule a daily notification
+@app.post("/notifications/schedule_daily/")
+async def schedule_daily_notification(schedule: NotificationSchedule):
+    response = notifications.schedule_daily_notification(
+        schedule.user_id, schedule.hour, schedule.minute, schedule.title, schedule.message, schedule.pet_name, schedule.subtitle
+    )
+
+    if 'error' in response:
+        raise HTTPException(status_code=500, detail=response['error'])
+
+    return {"message": "Notification scheduled successfully", "response": response}
+
+# Cancel a daily notification
+@app.post("/notifications/cancel_scheduled_notification/")
+async def cancel_notification(cancel: CancelNotification):
+    response = notifications.cancel_scheduled_notification(cancel.notification_id)
+    if 'error' in response:
+        raise HTTPException(status_code=500, detail=response['error'])
+
+    return response
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
