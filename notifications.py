@@ -2,6 +2,9 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime, timedelta, timezone
 import requests
+import schedule
+import time
+import pytz
 from firebase_setup import db
 from google.cloud.firestore import ArrayUnion
 
@@ -138,6 +141,7 @@ def schedule_daily_notification(user_id: str, hour: int, minute: int, title: str
             return {"error": "User not found"}
         user_data = user_doc.to_dict()
         oneSignalPushIds = user_data.get('pushIDs', [])
+        user_timezone = user_data.get('timezone', 'UTC')
 
         if not oneSignalPushIds:
             return {"error": "No OneSignal Push IDs found for user"}
@@ -149,8 +153,8 @@ def schedule_daily_notification(user_id: str, hour: int, minute: int, title: str
             if 'error' in cancel_response:
                 return cancel_response
 
-        now = datetime.now(timezone.utc)
-        target_time = datetime(now.year, now.month, now.day, hour, minute, tzinfo=timezone.utc)
+        now = datetime.now(pytz.timezone(user_timezone))
+        target_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
 
         if now > target_time:
             target_time += timedelta(days=1)
@@ -165,8 +169,7 @@ def schedule_daily_notification(user_id: str, hour: int, minute: int, title: str
             "send_after": target_time.isoformat(),
             "delayed_option": "timezone",
             "delivery_time_of_day": f"{hour:02d}:{minute:02d}",
-            "ttl": 604800,  # Time to live set to 7 days (7 * 24 * 60 * 60 seconds)
-            "repeats": True  # This ensures the notification repeats
+            "ttl": 604800  # Time to live set to 7 days (7 * 24 * 60 * 60 seconds)
         }
         if subtitle:
             notification_data["subtitle"] = {"en": subtitle}
@@ -202,3 +205,29 @@ def schedule_daily_notification(user_id: str, hour: int, minute: int, title: str
     except Exception as e:
         print("Error scheduling notification:", e)
         return {"error": str(e)}
+
+# Daily notification job
+def daily_notification_job():
+    users_ref = db.collection('users')
+    users = users_ref.stream()
+
+    for user in users:
+        user_data = user.to_dict()
+        if 'daily_playtime_reminder' in user_data:
+            reminder = user_data['daily_playtime_reminder']
+            schedule_daily_notification(
+                user.id,
+                reminder['hour'],
+                reminder['minute'],
+                reminder['title'],
+                reminder['message'],
+                reminder['pet_name'],
+                reminder.get('subtitle')
+            )
+
+# Schedule the job daily at midnight UTC
+schedule.every().day.at("00:00").do(daily_notification_job)
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
