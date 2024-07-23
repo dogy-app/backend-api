@@ -205,9 +205,9 @@ async def unsubscribe_from_channel(subscription: ChannelSubscription):
         raise HTTPException(status_code=response.status_code, detail=response.text)
 
 # Send a notification to a channel
-@app.post("/notifications/send_notification/")
+@app.post("/notifications/send_notification_to_channel/")
 async def send_notification(notification: NotificationMessage):
-    response = notifications.send_notification(notification.title, notification.message, notification.channel_tag)
+    response = notifications.send_notification_to_channel(notification.title, notification.message, notification.channel_tag)
 
     if response.status_code == 200:
         return {"message": "Notification sent successfully", "response": response.json()}
