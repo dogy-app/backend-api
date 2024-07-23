@@ -78,9 +78,8 @@ def run_scheduler():
     logger.info("Starting scheduler")
     schedule.every(1).minutes.do(daily_notification_job)
     while True:
-        logger.info("Scheduler is running...")
         schedule.run_pending()
-        time.sleep(60)
+        time.sleep(1)
 
 if __name__ == "__main__":
     scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)

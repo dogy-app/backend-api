@@ -83,7 +83,7 @@ async def add_park_endpoint(park: Park):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.put("/parks/{geohash}")
+@app.put("/parks/edit/{geohash}")
 async def edit_park_endpoint(geohash: str, park: Park):
     try:
         park_data = park.dict()
@@ -92,7 +92,7 @@ async def edit_park_endpoint(geohash: str, park: Park):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/parks/{geohash}")
+@app.delete("/parks/delete/{geohash}")
 async def delete_park_endpoint(geohash: str):
     try:
         delete_park_by_geohash(geohash)
@@ -163,6 +163,7 @@ class UserNotification(BaseModel):
     title: str
     message: str
     user_id: str
+    subtitle: str = None
 
 class NotificationSchedule(BaseModel):
     user_id: str
@@ -216,17 +217,20 @@ async def send_notification(notification: NotificationMessage):
 # Send a notification to a specific user
 @app.post("/notifications/send_notification_to_user/")
 async def send_notification_to_user(user_notification: UserNotification):
-    response = notifications.send_notification_to_user(user_notification.title, user_notification.message, user_notification.user_id)
+    response = notifications.send_notification_to_user(
+        user_notification.title,
+        user_notification.message,
+        user_notification.user_id,
+        user_notification.subtitle
+    )
 
-    if response.status_code == 200:
-        return {"message": "Notification sent to user successfully", "response": response.json()}
-    else:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+    if 'error' in response:
+        raise HTTPException(status_code=500, detail=response['error'])
+    return {"message": "Notification sent to user successfully", "response": response}
 
 # Schedule a daily notification
-@app.post("/notifications/create_daily_notfication/")
+@app.post("/notifications/create_daily_notification/")
 async def schedule_daily_notification(schedule: NotificationSchedule):
-
     response = notifications.store_daily_notification(
         schedule.user_id, schedule.hour, schedule.minute, schedule.title, schedule.message, schedule.pet_name, schedule.subtitle
     )
