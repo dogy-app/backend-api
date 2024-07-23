@@ -172,7 +172,6 @@ class NotificationSchedule(BaseModel):
     message: str
     pet_name: str
     subtitle: str = None
-
 class CancelNotification(BaseModel):
     notification_id: str
 
@@ -225,27 +224,31 @@ async def send_notification_to_user(user_notification: UserNotification):
         raise HTTPException(status_code=response.status_code, detail=response.text)
 
 # Schedule a daily notification
-@app.post("/notifications/schedule_daily/")
-async def schedule_daily_notification_endpoint(schedule: NotificationSchedule):
-    response = notifications.schedule_daily_notification(
+@app.post("/notifications/create_daily_notfication/")
+async def schedule_daily_notification(schedule: NotificationSchedule):
+
+    response = notifications.store_daily_notification(
         schedule.user_id, schedule.hour, schedule.minute, schedule.title, schedule.message, schedule.pet_name, schedule.subtitle
     )
 
-    if 'error' in response:
+    # Ensure response is a dictionary and check for 'error' key
+    if isinstance(response, dict) and 'error' in response:
         raise HTTPException(status_code=500, detail=response['error'])
+
+    # If response is not a dictionary, raise a different error
+    if not isinstance(response, dict):
+        raise HTTPException(status_code=500, detail="Invalid response from notification storage method.")
 
     return {"message": "Notification scheduled successfully", "response": response}
 
-
 # Cancel a daily notification
 @app.post("/notifications/cancel_scheduled_notification/")
-async def cancel_notification_endpoint(cancel: CancelNotification):
+async def cancel_notification(cancel: CancelNotification):
     response = notifications.cancel_scheduled_notification(cancel.notification_id)
     if 'error' in response:
         raise HTTPException(status_code=500, detail=response['error'])
 
     return response
-
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
