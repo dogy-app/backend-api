@@ -138,11 +138,10 @@ def schedule_daily_notification(user_id: str, hour: int, minute: int, title: str
     try:
         user_ref = db.collection('users').document(user_id)
         user_doc = user_ref.get()
-        if not user_doc.exists():
+        if not user_doc.exists:
             return {"error": "User not found"}
         user_data = user_doc.to_dict()
         oneSignalPushIds = user_data.get('pushIDs', [])
-        user_timezone = user_data.get('timezone', 'UTC')
 
         if not oneSignalPushIds:
             return {"error": "No OneSignal Push IDs found for user"}
@@ -154,8 +153,8 @@ def schedule_daily_notification(user_id: str, hour: int, minute: int, title: str
             if 'error' in cancel_response:
                 return cancel_response
 
-        now = datetime.now(pytz.timezone(user_timezone))
-        target_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        now = datetime.now(timezone.utc)
+        target_time = datetime(now.year, now.month, now.day, hour, minute, tzinfo=timezone.utc)
 
         if now > target_time:
             target_time += timedelta(days=1)
@@ -207,8 +206,9 @@ def schedule_daily_notification(user_id: str, hour: int, minute: int, title: str
         print("Error scheduling notification:", e)
         return {"error": str(e)}
 
-# Daily notification job
+# daily_notification_job()
 def daily_notification_job():
+    print("Running daily_notification_job")
     users_ref = db.collection('users')
     users = users_ref.stream()
 
@@ -216,6 +216,7 @@ def daily_notification_job():
         user_data = user.to_dict()
         if 'daily_playtime_reminder' in user_data:
             reminder = user_data['daily_playtime_reminder']
+            print(f"Scheduling notification for user {user.id} with reminder {reminder}")
             schedule_daily_notification(
                 user.id,
                 reminder['hour'],
@@ -223,29 +224,12 @@ def daily_notification_job():
                 reminder['title'],
                 reminder['message'],
                 reminder['pet_name'],
-                reminder.get('subtitle')
-            )
-
-def daily_notification_job():
-    users_ref = db.collection('users')
-    users = users_ref.stream()
-
-    for user in users:
-        user_data = user.to_dict()
-        if 'daily_playtime_reminder' in user_data:
-            reminder = user_data['daily_playtime_reminder']
-            schedule_daily_notification(
-                user.id,
-                reminder['hour'],
-                reminder['minute'],
-                reminder['title'],
-                reminder['message'],
-                reminder['pet_name'],
-                reminder.get('subtitle')
+                reminder['subtitle']
             )
 
 # Function to run the scheduler in a separate thread
 def run_scheduler():
+    print("Starting scheduler")
     schedule.every().day.at("00:00").do(daily_notification_job)
     while True:
         schedule.run_pending()

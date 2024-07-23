@@ -226,7 +226,7 @@ async def send_notification_to_user(user_notification: UserNotification):
 
 # Schedule a daily notification
 @app.post("/notifications/schedule_daily/")
-async def schedule_daily_notification(schedule: NotificationSchedule):
+async def schedule_daily_notification_endpoint(schedule: NotificationSchedule):
     response = notifications.schedule_daily_notification(
         schedule.user_id, schedule.hour, schedule.minute, schedule.title, schedule.message, schedule.pet_name, schedule.subtitle
     )
@@ -236,9 +236,10 @@ async def schedule_daily_notification(schedule: NotificationSchedule):
 
     return {"message": "Notification scheduled successfully", "response": response}
 
+
 # Cancel a daily notification
 @app.post("/notifications/cancel_scheduled_notification/")
-async def cancel_notification(cancel: CancelNotification):
+async def cancel_notification_endpoint(cancel: CancelNotification):
     response = notifications.cancel_scheduled_notification(cancel.notification_id)
     if 'error' in response:
         raise HTTPException(status_code=500, detail=response['error'])
