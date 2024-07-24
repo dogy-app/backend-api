@@ -33,7 +33,7 @@ def send_notification_to_user(title: str, message: str, user_id: str, subtitle: 
     try:
         user_ref = db.collection('users').document(user_id)
         user_doc = user_ref.get()
-        if not user_doc.exists():
+        if not user_doc.exists:
             return {"error": "User not found"}
 
         user_data = user_doc.to_dict()
@@ -154,7 +154,7 @@ def store_daily_notification(user_id: str, hour: int, minute: int, title: str, m
     try:
         user_ref = db.collection('users').document(user_id)
         user_doc = user_ref.get()
-        if not user_doc.exists():
+        if not user_doc.exists:
             logger.error(f"User not found: {user_id}")
             return {"error": "User not found"}
 
