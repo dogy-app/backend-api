@@ -4,12 +4,16 @@ from typing import List, Optional
 from pydantic import BaseModel
 import uvicorn
 import pygeohash as pgh
+from ask_dogy import ask_dogy
 from firebase_setup import db
 from blobs import generate_blob_name, upload_blob, list_blobs, delete_blob
 from search_parks import search_dog_parks
 from speech_to_text import get_transcription
 from parks import fetch_parks, add_new_park, edit_park_by_geohash, delete_park_by_geohash
+from openai import AsyncOpenAI
+from openai.types.beta import Thread, Assistant
 import notifications
+import os
 
 app = FastAPI()
 
@@ -253,6 +257,56 @@ async def cancel_notification(cancel: CancelNotification):
         raise HTTPException(status_code=500, detail=response['error'])
 
     return response
+
+# === ASK DOGY ===
+class UserMessage(BaseModel):
+    user_message: str
+    user_name: str
+    assistant_id: Optional[str] = None
+    thread_id: Optional[str] = None
+
+# Create a thread first before asking Dogy (run only once)
+@app.get("/create-thread/")
+async def create_thread():
+    """
+    Create a thread to interact with Dogy.
+
+    :return: Assistant ID and Thread ID
+    """
+    client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    dogy_assistant: Assistant = await client.beta.assistants.retrieve(assistant_id=os.getenv("DOGY_COMPANION_ID"))
+    thread: Thread = await client.beta.threads.create()
+    return {"assistant_id": dogy_assistant.id, "thread_id": thread.id}
+
+@app.post("/ask-dogy/")
+async def dogy_assistant(user_message: UserMessage):
+    """
+    Ask Dogy a question. Use the same assistant ID and thread ID for the same
+    conversation.
+
+    :param user_message: User message and user name. Optionally, you can provide
+    the assistant ID and thread ID to continue the conversation.
+    :return: Dogy's response, assistant ID, and thread ID.
+    """
+    if not user_message.assistant_id and not user_message.thread_id:
+        ids = await create_thread()
+        user_message.assistant_id = ids['assistant_id']
+        user_message.thread_id = ids['thread_id']
+
+    print(f"Assistant ID: {user_message.assistant_id}")
+    print(f"Thread ID: {user_message.thread_id}")
+    response = await ask_dogy(
+        user_message.user_message,
+        user_message.user_name,
+        user_message.assistant_id,
+        user_message.thread_id
+    )
+
+    return {
+        "response": response,
+        "assistant_id": user_message.assistant_id,
+        "thread_id": user_message.thread_id
+    }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
