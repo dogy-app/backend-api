@@ -4,7 +4,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 import uvicorn
 import pygeohash as pgh
-from ask_dogy import ask_dogy
+from ask_dogy import ask_dogy, retrieve_assistant
 from firebase_setup import db
 from blobs import generate_blob_name, upload_blob, list_blobs, delete_blob
 from search_parks import search_dog_parks
@@ -271,12 +271,11 @@ async def create_thread():
     """
     Create a thread to interact with Dogy.
 
-    :return: Assistant ID and Thread ID
+    :return: Thread ID
     """
     client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    dogy_assistant: Assistant = await client.beta.assistants.retrieve(assistant_id=os.getenv("DOGY_COMPANION_ID"))
     thread: Thread = await client.beta.threads.create()
-    return {"assistant_id": dogy_assistant.id, "thread_id": thread.id}
+    return {"thread_id": thread.id}
 
 @app.post("/ask-dogy/")
 async def dogy_assistant(user_message: UserMessage):
@@ -288,9 +287,17 @@ async def dogy_assistant(user_message: UserMessage):
     the assistant ID and thread ID to continue the conversation.
     :return: Dogy's response, assistant ID, and thread ID.
     """
-    if not user_message.assistant_id and not user_message.thread_id:
+    client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    assistant_id = await retrieve_assistant(user_message.user_message)
+    print(assistant_id)
+    user_message.assistant_id = assistant_id
+
+    if not assistant_id:
+        raise HTTPException(status_code=500, detail="Assistant ID failed to retrieve")
+
+    await client.beta.assistants.retrieve(assistant_id=assistant_id)
+    if not user_message.thread_id:
         ids = await create_thread()
-        user_message.assistant_id = ids['assistant_id']
         user_message.thread_id = ids['thread_id']
 
     print(f"Assistant ID: {user_message.assistant_id}")

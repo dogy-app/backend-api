@@ -39,6 +39,7 @@ def upload_image_to_azure(photo_url, name):
     except Exception as e:
         print(f"Error uploading image to Azure: {e}")
         return None
+
 def is_image_already_uploaded(blob_name):
     try:
         blob_client = blob_service_client.get_blob_client(container=AZURE_STORAGE_CONTAINER_NAME, blob=blob_name)

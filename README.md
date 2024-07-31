@@ -15,6 +15,7 @@ Backend for dogy app
    `AZURE_STORAGE_FIREBASE_KEY_BLOB_NAME=KEY`
    `GOOGLE_API_KEY=KEY`
    `OPENAI_API_KEY=KEY`
+   `DOGY_COMPANION_ID=KEY`
 3. Install requirements
    `pip install -r requirements.txt`
 4. run `uvicorn main:app --reload` to start dev server
