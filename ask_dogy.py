@@ -2,6 +2,7 @@ import asyncio
 from dotenv import load_dotenv
 import os
 import json
+from azure.appconfiguration.provider import load, SettingSelector
 from openai import AsyncOpenAI, AsyncAssistantEventHandler
 from typing_extensions import override
 from typing import Optional
@@ -12,6 +13,15 @@ load_dotenv()
 openai_key = os.getenv("OPENAI_API_KEY")
 
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_key_value(key):
+    config = load(connection_string=os.getenv("AZURE_APPCONFIGURATION_CONNECTION_STRING"))
+    try:
+        value = config[key]
+        return value
+    except Exception as ex:
+        print(f"Error retrieving key {key}: {ex}")
+        return None
 
 # async def ask_nutrition_assistant(user_message: str):
 #     print("Ask dogy will use ask_nutrition_assistant to determine the response for nutrition in dog foods.")
@@ -99,36 +109,7 @@ class EventHandler(AsyncAssistantEventHandler):
 
 # Assistant Selector
 async def retrieve_assistant(user_message: str) -> str:
-    ASSISTANT_SELECTOR_PROMPT="""You are an Assistant selector. Your task is to determine the
-best assistant based on the user input. Try your best to determine the best assistant to
-use, if the query does not correspond to any assistant, return "none". The background
-context for all of them is that they are all dog-friendly. The output should all
-be in lowercase and only the name of the assistant, no punctuations or anything else.
-Here are the examples for each assistant, your goal is to determine the correct assistant
-based on the following information. The pattern is assistant: query_example. Here are
-the examples:
-
-nutrition_assistant: What are the essential nutrients that should be in my dog's food?
-nutrition_assistant: How much protein does my dog need in their diet?
-nutrition_assistant: Is grain-free dog food better for my dog?
-nutrition_assistant: How do I choose a high-quality dog food?
-nutrition_assistant: Can I feed my dog a vegetarian or vegan diet?
-nutrition_assistant: Are raw diets safe and nutritious for dogs?
-nutrition_assistant: What are the best sources of fat for my dog's diet?
-nutrition_assistant: How do I know if my dog has food allergies?
-nutrition_assistant: What are the signs of a nutritionally balanced dog food?
-nutrition_assistant: How often should I change my dog's food?
-nutrition_assistant: Is homemade dog food better than commercial dog food?
-nutrition_assistant: How much calcium does my dog need?
-nutrition_assistant: Can I give my dog supplements to improve their nutrition?
-nutrition_assistant: What ingredients should I avoid in my dog's food?
-nutrition_assistant: How can I tell if my dog is overweight or underweight?
-nutrition_assistant: Are there specific diets for dogs with certain health conditions?
-nutrition_assistant: How much water should my dog drink daily?
-nutrition_assistant: Can puppies and adult dogs eat the same food?
-nutrition_assistant: What is the best diet for senior dogs?
-nutrition_assistant: How do I transition my dog to a new type of food?
-    """
+    ASSISTANT_SELECTOR_PROMPT = get_key_value("ASSISTANT_SELECTOR_PROMPT")
 
     response = await client.chat.completions.create(
         model="gpt-4o",

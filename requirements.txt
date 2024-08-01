@@ -1,5 +1,6 @@
 annotated-types==0.7.0
 anyio==4.4.0
+azure-appconfiguration-provider==1.2.0
 azure-core==1.30.2
 azure-storage-blob==12.20.0
 CacheControl==0.14.0
