@@ -11,7 +11,7 @@ from search_parks import search_dog_parks
 from speech_to_text import get_transcription
 from parks import fetch_parks, add_new_park, edit_park_by_geohash, delete_park_by_geohash
 from openai import AsyncOpenAI
-from openai.types.beta import Thread, Assistant
+from openai.types.beta import Thread
 import notifications
 import os
 
@@ -262,7 +262,6 @@ async def cancel_notification(cancel: CancelNotification):
 class UserMessage(BaseModel):
     user_message: str
     user_name: str
-    assistant_id: Optional[str] = None
     thread_id: Optional[str] = None
 
 # Create a thread first before asking Dogy (run only once)
@@ -288,11 +287,17 @@ async def dogy_assistant(user_message: UserMessage):
     :return: Dogy's response, assistant ID, and thread ID.
     """
     client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    assistant_id = await retrieve_assistant(user_message.user_message)
-    print(assistant_id)
-    user_message.assistant_id = assistant_id
+    selected_assistant = await retrieve_assistant(user_message.user_message)
+    print(selected_assistant)
 
-    if not assistant_id:
+    dogy_id = os.getenv("DOGY_COMPANION_ID")
+    nutrition_assistant_id = os.getenv("NUTRITION_ASSISTANT_ID")
+
+    if selected_assistant == "none":
+        assistant_id = dogy_id
+    elif selected_assistant == "nutrition_assistant":
+        assistant_id = nutrition_assistant_id
+    else:
         raise HTTPException(status_code=500, detail="Assistant ID failed to retrieve")
 
     await client.beta.assistants.retrieve(assistant_id=assistant_id)
@@ -300,18 +305,19 @@ async def dogy_assistant(user_message: UserMessage):
         ids = await create_thread()
         user_message.thread_id = ids['thread_id']
 
-    print(f"Assistant ID: {user_message.assistant_id}")
+    print(f"Assistant ID: {assistant_id}")
     print(f"Thread ID: {user_message.thread_id}")
     response = await ask_dogy(
         user_message.user_message,
         user_message.user_name,
-        user_message.assistant_id,
+        assistant_id,
         user_message.thread_id
     )
 
     return {
         "response": response,
-        "assistant_id": user_message.assistant_id,
+        "assistant_selected": selected_assistant,
+        "assistant_id": assistant_id,
         "thread_id": user_message.thread_id
     }
 

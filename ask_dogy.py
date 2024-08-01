@@ -9,8 +9,6 @@ from typing import Optional
 # Load environment variables
 load_dotenv()
 
-dogy_id = os.getenv("DOGY_COMPANION_ID")
-nutrition_assistant_id = os.getenv("NUTRITION_ASSISTANT_ID")
 openai_key = os.getenv("OPENAI_API_KEY")
 
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -100,8 +98,8 @@ class EventHandler(AsyncAssistantEventHandler):
                 self.responses.append(text)
 
 # Assistant Selector
-async def retrieve_assistant(user_message: str) -> str | None:
-    ASSISTANT_SELECTOR_PROMPT=f"""You are an Assistant selector. Your task is to determine the
+async def retrieve_assistant(user_message: str) -> str:
+    ASSISTANT_SELECTOR_PROMPT="""You are an Assistant selector. Your task is to determine the
 best assistant based on the user input. Try your best to determine the best assistant to
 use, if the query does not correspond to any assistant, return "none". The background
 context for all of them is that they are all dog-friendly. The output should all
@@ -142,13 +140,7 @@ nutrition_assistant: How do I transition my dog to a new type of food?
     assistant = response.choices[0].message.content
     print(f"choices: {response}")
     print(assistant)
-    print(type(assistant))
-    if assistant == "none":
-        return dogy_id
-    elif assistant == "nutrition_assistant":
-        return nutrition_assistant_id
-    else:
-        return ""
+    return assistant
 
 # Main function for ask dogy
 async def ask_dogy(
@@ -173,8 +165,8 @@ async def ask_dogy(
         await stream.until_done()
 
     # Skip the first response (assuming it's the duplicate "Hi")
-    # return "".join([str(response) for response in event_handler.responses[1:]])
-    return "".join([str(response) for response in event_handler.responses])
+    return "".join([str(response) for response in event_handler.responses[1:]])
+    # return "".join([str(response) for response in event_handler.responses])
 
 # Main function to run the ask_dogy function
 if __name__ == "__main__":
