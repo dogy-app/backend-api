@@ -48,11 +48,14 @@ class SearchParks:
         country = None
 
         location = geocode_place['geometry']['location']
+        # FIXME: Retrieving city has to be done in a better way
         for component in geocode_place['address_components']:
             if 'locality' in component['types']:
                 city = component['long_name']
             if 'country' in component['types']:
                 country = component['long_name']
+            if 'postal_town' in component['types']:
+                city = component['long_name']
 
         return {
             'latitude': location['lat'],
@@ -67,16 +70,18 @@ class SearchParks:
         Get the latitude, longitude, city, and country of a location
         :param location: The location to get metadata for (eg. Stockholm, Sweden)
         """
-        print(place)
         city = None
         country = None
 
         location = place['location']
+        # FIXME: Retrieving city has to be done in a better way
         for component in place['addressComponents']:
             if 'locality' in component['types']:
                 city = component['longText']
             if 'country' in component['types']:
                 country = component['longText']
+            if 'postal_town' in component['types']:
+                city = component['longText']
 
         return {
             'latitude': location['latitude'],
@@ -113,6 +118,7 @@ class SearchParks:
         :param radius: The radius (meters) within which to search for parks
         """
         location_metadata = self.get_location_metadata_geocode(location)
+        print(f"Location Metadata Geocode: {location_metadata}")
         headers = {
             "Content-Type": "application/json",
             "X-Goog-Api-Key": self.api_key,
@@ -124,7 +130,7 @@ class SearchParks:
             headers=headers,
             json={
                 "includedTypes": ["dog_park"],
-                "maxResultCount": 3,
+                "maxResultCount": 1,
                 "locationRestriction": {
                     "circle": {
                         "center": {
