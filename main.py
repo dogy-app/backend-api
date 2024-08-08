@@ -7,11 +7,12 @@ import pygeohash as pgh
 from ask_dogy import ask_dogy, retrieve_assistant
 from firebase_setup import db
 from blobs import generate_blob_name, upload_blob, list_blobs, delete_blob
-from search_parks import search_dog_parks
+from search_parks import SearchParks, search_dog_parks
 from speech_to_text import get_transcription
 from parks import fetch_parks, add_new_park, edit_park_by_geohash, delete_park_by_geohash
 from openai import AsyncOpenAI
 from openai.types.beta import Thread
+from database import Database
 import notifications
 import os
 
@@ -123,9 +124,19 @@ async def update_geohashes():
 
 # Search dog parks on Google Maps
 @app.post("/search_dog_parks/")
-async def search_dog_parks_endpoint(location: str = Query(...), grid_size: int = Query(5000), results_limit: int = Query(None)):
+# async def search_dog_parks_endpoint(location: str = Query(...), grid_size: int = Query(5000), results_limit: int = Query(None)):
+#     try:
+#         results = search_dog_parks(location, grid_size, results_limit)
+#         return JSONResponse(content={"results": results})
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/search_dog_parks/")
+async def search_dog_parks_endpoint(location: str = Query(...), radius: int = Query(5000), results_limit: int = Query(None)):
     try:
-        results = search_dog_parks(location, grid_size, results_limit)
+        search_parks = SearchParks(os.getenv("GOOGLE_MAPS_API_KEY"), location)
+        search_results = search_parks.search_new_parks(location, radius).extract_park_details()
+        search_parks.insert_parks(search_results, Database(os.getenv("AZURE_COSMOSDB_CONNECTION_STRING")))
         return JSONResponse(content={"results": results})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -190,6 +190,7 @@ class SearchParks:
         """
         database.connect_db().set_collection("places", "dog_parks")
         database.insert_many(park_details)
+        database.create_geospatial_index("location")
 
     def search_existing_parks(self, location, database, radius=10000):
         """

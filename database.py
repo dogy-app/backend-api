@@ -1,4 +1,5 @@
 from pymongo.mongo_client import MongoClient
+from pymongo import GEOSPHERE
 from pymongo.server_api import ServerApi
 from bson.objectid import ObjectId
 
@@ -38,4 +39,12 @@ class Database:
         :param documents: The documents to insert
         """
         self.collection.insert_many(documents)
+        return self
+
+    def create_geospatial_index(self, field: str) -> Self:
+        """
+        Create a geospatial index on the collection
+        :param field: The field to create the index on
+        """
+        self.collection.create_index([(field, GEOSPHERE)])
         return self
