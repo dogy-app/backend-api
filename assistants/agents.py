@@ -1,11 +1,12 @@
 import asyncio
-from dotenv import load_dotenv
-import os
 import json
-from azure.appconfiguration.provider import load
-from openai import AsyncOpenAI, AsyncAssistantEventHandler
-from typing_extensions import override
+import os
 from typing import Optional
+
+from azure.appconfiguration.provider import SettingSelector, load
+from dotenv import load_dotenv
+from openai import AsyncAssistantEventHandler, AsyncOpenAI
+from typing_extensions import override
 
 # Load environment variables
 load_dotenv()

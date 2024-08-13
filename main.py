@@ -1,28 +1,37 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Body
-from starlette.responses import JSONResponse
-from typing import List, Optional
-from pydantic import BaseModel
+import os
+from typing import Optional
+
 import uvicorn
-import pygeohash as pgh
-from ask_dogy import ask_dogy, retrieve_assistant
-from firebase_setup import db
-from blobs import generate_blob_name, upload_blob, list_blobs, delete_blob
-from search_parks import SearchParks, search_dog_parks
-from speech_to_text import get_transcription
-from parks import fetch_parks, add_new_park, edit_park_by_geohash, delete_park_by_geohash
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from openai import AsyncOpenAI
 from openai.types.beta import Thread
-from database import Database
+from pydantic import BaseModel
+from starlette.responses import JSONResponse
+
 import notifications
-import os
+from ask_dogy import ask_dogy, retrieve_assistant
+from blobs import delete_blob, generate_blob_name, list_blobs, upload_blob
+from routers.audio import router as audio_router
+from routers.images import router as images_router
+from routers.notifications import router as notifications_router
+from routers.parks import router as parks_router
+from routers.assistants import router as assistants_router
 
 app = FastAPI()
 
+
 # Entry
 @app.get("/")
-async def api_entry():
-    return {"message": "Dogy Backend API"}
+def api_entry():
+    return JSONResponse(content={"message": "Welcome to the Dogy API!"})
 
+
+# === IMAGES ===
+# New endpoints
+app.include_router(images_router, tags=["images"])
+
+
+# LEGACY endpoints
 # Upload pet image
 @app.post("/upload_image/")
 async def upload_image(file: UploadFile = File(...), name: str = Query(None)):
@@ -37,6 +46,7 @@ async def upload_image(file: UploadFile = File(...), name: str = Query(None)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # List pet images
 @app.get("/list_images/")
 async def list_images():
@@ -46,6 +56,7 @@ async def list_images():
         return JSONResponse(content={"urls": blob_urls})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # Delete pet image
 @app.delete("/delete_image/")
@@ -61,124 +72,155 @@ async def delete_image(name: str = Query(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # === PARKS ===
-class Park(BaseModel):
-    name: str
-    country: str
-    address: str
-    city: str
-    location: List[float]
-    image: Optional[str] = None
+app.include_router(parks_router, tags=["parks"])
 
-@app.get("/parks/fetch/")
-async def fetch_parks_endpoint():
-    try:
-        parks = fetch_parks()
-        parks_data = [park.to_dict() for park in parks]
-        return JSONResponse(content={"parks": parks_data})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/parks/add/")
-async def add_park_endpoint(park: Park):
-    try:
-        park_data = park.dict()
-        add_new_park(park_data)
-        return JSONResponse(content={"message": "Park added successfully"})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# class Park(BaseModel):
+#     name: str
+#     country: str
+#     address: str
+#     city: str
+#     location: List[float]
+#     image: Optional[str] = None
 
-@app.put("/parks/edit/{geohash}")
-async def edit_park_endpoint(geohash: str, park: Park):
-    try:
-        park_data = park.dict()
-        edit_park_by_geohash(geohash, park_data)
-        return JSONResponse(content={"message": "Park updated successfully"})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/parks/delete/{geohash}")
-async def delete_park_endpoint(geohash: str):
-    try:
-        delete_park_by_geohash(geohash)
-        return JSONResponse(content={"message": "Park deleted successfully"})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-async def update_geohashes():
-    try:
-        parks_ref = db.collection('new_parks')
-        parks = parks_ref.stream()
-
-        for park in parks:
-            park_data = park.to_dict()
-            location = park_data.get("location")
-            if location:
-                lat, lon = location
-                geohash = pgh.encode(lat, lon)
-                parks_ref.document(park.id).update({"geohash": geohash})
-
-        return {"message": "Geohashes updated successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# Search dog parks on Google Maps
-@app.post("/search_dog_parks/")
-# async def search_dog_parks_endpoint(location: str = Query(...), grid_size: int = Query(5000), results_limit: int = Query(None)):
+# @app.get("/parks/fetch/")
+# async def fetch_parks_endpoint():
 #     try:
-#         results = search_dog_parks(location, grid_size, results_limit)
+#         parks = fetch_parks()
+#         parks_data = [park.to_dict() for park in parks]
+#         return JSONResponse(content={"parks": parks_data})
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+
+# @app.post("/parks/add/")
+# async def add_park_endpoint(park: Park):
+#     try:
+#         park_data = park.dict()
+#         add_new_park(park_data)
+#         return JSONResponse(content={"message": "Park added successfully"})
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+
+# @app.put("/parks/edit/{geohash}")
+# async def edit_park_endpoint(geohash: str, park: Park):
+#     try:
+#         park_data = park.dict()
+#         edit_park_by_geohash(geohash, park_data)
+#         return JSONResponse(content={"message": "Park updated successfully"})
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+
+# @app.delete("/parks/delete/{geohash}")
+# async def delete_park_endpoint(geohash: str):
+#     try:
+#         delete_park_by_geohash(geohash)
+#         return JSONResponse(content={"message": "Park deleted successfully"})
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+
+# async def update_geohashes():
+#     try:
+#         parks_ref = db.collection("new_parks")
+#         parks = parks_ref.stream()
+
+#         for park in parks:
+#             park_data = park.to_dict()
+#             location = park_data.get("location")
+#             if location:
+#                 lat, lon = location
+#                 geohash = pgh.encode(lat, lon)
+#                 parks_ref.document(park.id).update({"geohash": geohash})
+
+#         return {"message": "Geohashes updated successfully"}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+
+# # Search dog parks on Google Maps
+# @app.post("/search_dog_parks/")
+# # async def search_dog_parks_endpoint(location: str = Query(...), grid_size: int = Query(5000), results_limit: int = Query(None)):
+# #     try:
+# #         results = search_dog_parks(location, grid_size, results_limit)
+# #         return JSONResponse(content={"results": results})
+# #     except Exception as e:
+# #         raise HTTPException(status_code=500, detail=str(e))
+
+
+# @app.post("/search_dog_parks/")
+# async def search_dog_parks_endpoint(
+#     location: str = Query(...),
+#     radius: int = Query(5000),
+#     results_limit: int = Query(None),
+# ):
+#     try:
+#         search_parks = SearchParks(os.getenv("GOOGLE_MAPS_API_KEY"), location)
+#         search_results = search_parks.search_new_parks(
+#             location, radius
+#         ).extract_park_details()
+#         search_parks.insert_parks(
+#             search_results, Database(os.getenv("AZURE_COSMOSDB_CONNECTION_STRING"))
+#         )
 #         return JSONResponse(content={"results": results})
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/search_dog_parks/")
-async def search_dog_parks_endpoint(location: str = Query(...), radius: int = Query(5000), results_limit: int = Query(None)):
-    try:
-        search_parks = SearchParks(os.getenv("GOOGLE_MAPS_API_KEY"), location)
-        search_results = search_parks.search_new_parks(location, radius).extract_park_details()
-        search_parks.insert_parks(search_results, Database(os.getenv("AZURE_COSMOSDB_CONNECTION_STRING")))
-        return JSONResponse(content={"results": results})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 # Speech-to-text
-@app.post("/audio/transcriptions/create")
-async def upload_audio(file: UploadFile = File(...)):
-    """
-    Upload an audio file and get its transcription
+app.include_router(audio_router, tags=["audio"])
 
-    :param file: Audio file to transcribe
-    :type file: UploadFile
-    :return: Transcription of the audio file
-    """
 
-    try:
-        # Get the filepath of the audio file and get its transcription
-        transcription = get_transcription(file.filename)
+# @app.post("/audio/transcriptions/create")
+# async def upload_audio(file: UploadFile = File(...)):
+#     """
+#     Upload an audio file and get its transcription
 
-        return JSONResponse(content={"response": transcription.text}, status_code=200)
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+#     :param file: Audio file to transcribe
+#     :type file: UploadFile
+#     :return: Transcription of the audio file
+#     """
+
+#     try:
+#         # Get the filepath of the audio file and get its transcription
+#         transcription = get_transcription(file.filename)
+
+#         return JSONResponse(content={"response": transcription.text}, status_code=200)
+#     except Exception as e:
+#         return JSONResponse(content={"error": str(e)}, status_code=500)
+
 
 # === NOTIFICATIONS ===
+app.include_router(notifications_router, tags=["notifications"])
+
+
 class DeviceRegistration(BaseModel):
     user_id: str
     oneSignalPushId: str
 
+
 class ChannelSubscription(BaseModel):
     device_token: str
     channel_tag: str
+
 
 class NotificationMessage(BaseModel):
     title: str
     message: str
     channel_tag: str = None
 
+
 class UserNotification(BaseModel):
     title: str
     message: str
     user_id: str
     subtitle: str = None
+
 
 class NotificationSchedule(BaseModel):
     user_id: str
@@ -188,46 +230,70 @@ class NotificationSchedule(BaseModel):
     message: str
     pet_name: str
     subtitle: str = None
+
+
 class CancelNotification(BaseModel):
     notification_id: str
+
 
 # Register a device
 @app.post("/notifications/register_device/")
 async def register_device(device_registration: DeviceRegistration):
-    response = notifications.register_device(device_registration.user_id, device_registration.oneSignalPushId)
-    if 'error' in response:
-        raise HTTPException(status_code=500, detail=response['error'])
+    response = notifications.register_device(
+        device_registration.user_id, device_registration.oneSignalPushId
+    )
+    if "error" in response:
+        raise HTTPException(status_code=500, detail=response["error"])
     return response
+
 
 # Subscribe to a channel
 @app.post("/notifications/subscribe_to_channel/")
 async def subscribe_to_channel(subscription: ChannelSubscription):
-    response = notifications.subscribe_to_channel(subscription.device_token, subscription.channel_tag)
+    response = notifications.subscribe_to_channel(
+        subscription.device_token, subscription.channel_tag
+    )
 
     if response.status_code == 200:
-        return {"message": "Subscribed to channel successfully", "response": response.json()}
+        return {
+            "message": "Subscribed to channel successfully",
+            "response": response.json(),
+        }
     else:
         raise HTTPException(status_code=response.status_code, detail=response.text)
+
 
 # Unsubscribe from a channel
 @app.post("/notifications/unsubscribe_from_channel/")
 async def unsubscribe_from_channel(subscription: ChannelSubscription):
-    response = notifications.unsubscribe_from_channel(subscription.device_token, subscription.channel_tag)
+    response = notifications.unsubscribe_from_channel(
+        subscription.device_token, subscription.channel_tag
+    )
 
     if response.status_code == 200:
-        return {"message": "Unsubscribed from channel successfully", "response": response.json()}
+        return {
+            "message": "Unsubscribed from channel successfully",
+            "response": response.json(),
+        }
     else:
         raise HTTPException(status_code=response.status_code, detail=response.text)
+
 
 # Send a notification to a channel
 @app.post("/notifications/send_notification_to_channel/")
 async def send_notification(notification: NotificationMessage):
-    response = notifications.send_notification_to_channel(notification.title, notification.message, notification.channel_tag)
+    response = notifications.send_notification_to_channel(
+        notification.title, notification.message, notification.channel_tag
+    )
 
     if response.status_code == 200:
-        return {"message": "Notification sent successfully", "response": response.json()}
+        return {
+            "message": "Notification sent successfully",
+            "response": response.json(),
+        }
     else:
         raise HTTPException(status_code=response.status_code, detail=response.text)
+
 
 # Send a notification to a specific user
 @app.post("/notifications/send_notification_to_user/")
@@ -236,44 +302,59 @@ async def send_notification_to_user(user_notification: UserNotification):
         user_notification.title,
         user_notification.message,
         user_notification.user_id,
-        user_notification.subtitle
+        user_notification.subtitle,
     )
 
-    if 'error' in response:
-        raise HTTPException(status_code=500, detail=response['error'])
+    if "error" in response:
+        raise HTTPException(status_code=500, detail=response["error"])
     return {"message": "Notification sent to user successfully", "response": response}
+
 
 # Schedule a daily notification
 @app.post("/notifications/create_daily_notification/")
 async def schedule_daily_notification(schedule: NotificationSchedule):
     response = notifications.store_daily_notification(
-        schedule.user_id, schedule.hour, schedule.minute, schedule.title, schedule.message, schedule.pet_name, schedule.subtitle
+        schedule.user_id,
+        schedule.hour,
+        schedule.minute,
+        schedule.title,
+        schedule.message,
+        schedule.pet_name,
+        schedule.subtitle,
     )
 
     # Ensure response is a dictionary and check for 'error' key
-    if isinstance(response, dict) and 'error' in response:
-        raise HTTPException(status_code=500, detail=response['error'])
+    if isinstance(response, dict) and "error" in response:
+        raise HTTPException(status_code=500, detail=response["error"])
 
     # If response is not a dictionary, raise a different error
     if not isinstance(response, dict):
-        raise HTTPException(status_code=500, detail="Invalid response from notification storage method.")
+        raise HTTPException(
+            status_code=500, detail="Invalid response from notification storage method."
+        )
 
     return {"message": "Notification scheduled successfully", "response": response}
+
 
 # Cancel a daily notification
 @app.post("/notifications/cancel_scheduled_notification/")
 async def cancel_notification(cancel: CancelNotification):
     response = notifications.cancel_scheduled_notification(cancel.notification_id)
-    if 'error' in response:
-        raise HTTPException(status_code=500, detail=response['error'])
+    if "error" in response:
+        raise HTTPException(status_code=500, detail=response["error"])
 
     return response
 
+
 # === ASK DOGY ===
+app.include_router(assistants_router, tags=["assistant"])
+
+
 class UserMessage(BaseModel):
     user_message: str
     user_name: str
     thread_id: Optional[str] = None
+
 
 # Create a thread first before asking Dogy (run only once)
 @app.get("/create-thread/")
@@ -286,6 +367,7 @@ async def create_thread():
     client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     thread: Thread = await client.beta.threads.create()
     return {"thread_id": thread.id}
+
 
 @app.post("/ask-dogy/")
 async def dogy_assistant(user_message: UserMessage):
@@ -314,7 +396,7 @@ async def dogy_assistant(user_message: UserMessage):
     await client.beta.assistants.retrieve(assistant_id=assistant_id)
     if not user_message.thread_id:
         ids = await create_thread()
-        user_message.thread_id = ids['thread_id']
+        user_message.thread_id = ids["thread_id"]
 
     print(f"Assistant ID: {assistant_id}")
     print(f"Thread ID: {user_message.thread_id}")
@@ -322,15 +404,16 @@ async def dogy_assistant(user_message: UserMessage):
         user_message.user_message,
         user_message.user_name,
         assistant_id,
-        user_message.thread_id
+        user_message.thread_id,
     )
 
     return {
         "response": response,
         "assistant_selected": selected_assistant,
         "assistant_id": assistant_id,
-        "thread_id": user_message.thread_id
+        "thread_id": user_message.thread_id,
     }
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

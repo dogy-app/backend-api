@@ -1,0 +1,7 @@
+[tool.ruff.lint]
+extend-select = ["I", "N", "C4", "TCH", "SIM", "FAST"]
+ignore = []
+
+[tool.ruff]
+show-fixes = true
+target-version = "py37"
