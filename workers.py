@@ -1,14 +1,14 @@
-import os
-import schedule
-import time
-import threading
 import logging
-from firebase_setup import db
-import notifications
-from google.cloud import firestore
-from dotenv import load_dotenv
+import threading
+import time
 from datetime import datetime, timedelta
+
 import pytz
+import schedule
+from dotenv import load_dotenv
+
+import notifications
+from utils.firebase import db
 
 load_dotenv()
 

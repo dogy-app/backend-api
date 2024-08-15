@@ -2,7 +2,7 @@ from fastapi import APIRouter, File, UploadFile
 from pydantic import BaseModel
 from starlette.responses import JSONResponse
 
-from audio.speech_to_text import get_transcription
+from assistants.audio.speech_to_text import get_transcription
 
 router = APIRouter(prefix="/audio")
 

@@ -1,5 +1,6 @@
 import requests
-from firebase_setup import db
+
+from utils.firebase import db
 
 from .core import ONESIGNAL_API_KEY, ONESIGNAL_APP_ID, logger
 

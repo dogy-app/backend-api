@@ -1,14 +1,23 @@
 from fastapi import APIRouter, HTTPException
 
-from notifications.channels import (send_notification_to_channel,
-                                    subscribe_to_channel,
-                                    unsubscribe_from_channel)
+from notifications.channels import (
+    send_notification_to_channel,
+    subscribe_to_channel,
+    unsubscribe_from_channel,
+)
 from notifications.devices import register_device
-from notifications.schedule import (cancel_scheduled_notification,
-                                    store_daily_notification)
-from notifications.types import (CancelNotification, ChannelSubscription,
-                                 DeviceRegistration, NotificationMessage,
-                                 NotificationSchedule, UserNotification)
+from notifications.schedule import (
+    cancel_scheduled_notification,
+    store_daily_notification,
+)
+from notifications.types import (
+    CancelNotification,
+    ChannelSubscription,
+    DeviceRegistration,
+    NotificationMessage,
+    NotificationSchedule,
+    UserNotification,
+)
 from notifications.users import send_notification_to_user
 
 router = APIRouter(prefix="/notifications")

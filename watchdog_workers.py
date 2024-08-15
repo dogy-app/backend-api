@@ -1,14 +1,18 @@
+import logging
 import os
+import subprocess
 import sys
 import time
-import subprocess
-import logging
-from watchdog.observers import Observer
+
 from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
+
 
 class WorkerReloader(FileSystemEventHandler):
     def __init__(self, script_path):
@@ -29,10 +33,13 @@ class WorkerReloader(FileSystemEventHandler):
             logger.info(f"{self.script_path} modified; restarting worker...")
             self.start_worker()
 
+
 if __name__ == "__main__":
     worker_script = "workers.py"
     script_dir = os.path.dirname(os.path.abspath(worker_script))
-    logger.info(f"Monitoring changes in directory: {script_dir} for script: {worker_script}")
+    logger.info(
+        f"Monitoring changes in directory: {script_dir} for script: {worker_script}"
+    )
 
     event_handler = WorkerReloader(worker_script)
     observer = Observer()

@@ -1,5 +1,6 @@
-from .core import logger, ONESIGNAL_API_KEY, ONESIGNAL_APP_ID
 import requests
+
+from .core import ONESIGNAL_API_KEY, ONESIGNAL_APP_ID, logger
 
 
 # Subscribe to a channel

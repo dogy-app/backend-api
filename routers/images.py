@@ -1,6 +1,7 @@
-from blobs import delete_blob, generate_blob_name, list_blobs, upload_blob
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from starlette.responses import JSONResponse
+
+from images.crud import delete_blob, generate_blob_name, list_blobs, upload_blob
 
 router = APIRouter(prefix="/images")
 

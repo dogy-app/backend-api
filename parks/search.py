@@ -5,7 +5,7 @@ import pygeohash as pgh
 import requests
 
 # from database import Database
-from helpers import upload_image_to_azure
+from utils.azure import upload_image_to_azure
 
 
 class SearchParks:

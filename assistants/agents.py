@@ -3,7 +3,7 @@ import json
 import os
 from typing import Optional
 
-from azure.appconfiguration.provider import SettingSelector, load
+from azure.appconfiguration.provider import load
 from dotenv import load_dotenv
 from openai import AsyncAssistantEventHandler, AsyncOpenAI
 from typing_extensions import override
@@ -74,7 +74,7 @@ class EventHandler(AsyncAssistantEventHandler):
                 print(delta.code_interpreter.input, end="", flush=True)
                 self.responses.append(delta.code_interpreter.input)
             if delta.code_interpreter.outputs:
-                print(f"\n\noutput >", flush=True)
+                print("\n\noutput >", flush=True)
                 for output in delta.code_interpreter.outputs:
                     if output.type == "logs":
                         print(f"\n{output.logs}", flush=True)
