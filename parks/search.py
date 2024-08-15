@@ -1,10 +1,10 @@
-import os
 from typing import Self
 
 import googlemaps
 import pygeohash as pgh
 import requests
-from database import Database
+
+# from database import Database
 from helpers import upload_image_to_azure
 
 
@@ -223,15 +223,18 @@ class SearchParks:
 
 
 def search_parks(location: str, radius: int):
-    """
-    Search for parks near a location within a given radius
-    :param location: The location to search around (eg. Stockholm, Sweden)
-    :param radius: The radius around the location to search in
-    """
-    database = Database(os.getenv("AZURE_COSMOSDB_CONNECTION_STRING"))
-    database.connect_db().set_collection("places", "dog_parks")
-    search_query = SearchParks(api_key="API_KEY", location="Stockholm, Sweden")
-    search_query.search_new_parks(location, radius)
-    park_details = search_query.extract_park_details()
-    search_query.insert_parks(park_details, database)
-    return park_details
+    #     """
+    #     Search for parks near a location within a given radius
+    #     :param location: The location to search around (eg. Stockholm, Sweden)
+    #     :param radius: The radius around the location to search in
+    #     """
+    return ""
+
+
+#     database = Database(os.getenv("AZURE_COSMOSDB_CONNECTION_STRING"))
+#     database.connect_db().set_collection("places", "dog_parks")
+#     search_query = SearchParks(api_key="API_KEY", location="Stockholm, Sweden")
+#     search_query.search_new_parks(location, radius)
+#     park_details = search_query.extract_park_details()
+#     search_query.insert_parks(park_details, database)
+#     return park_details

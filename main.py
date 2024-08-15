@@ -1,23 +1,40 @@
 import os
+from contextlib import asynccontextmanager
+from decimal import Decimal
 from typing import Optional
 
 import uvicorn
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile, Depends
 from openai import AsyncOpenAI
 from openai.types.beta import Thread
 from pydantic import BaseModel
+from sqlmodel import Session
 from starlette.responses import JSONResponse
 
 import notifications
 from ask_dogy import ask_dogy, retrieve_assistant
 from blobs import delete_blob, generate_blob_name, list_blobs, upload_blob
+from database.core import init_db, get_session
+from database.models import Park
+from database.parks import create_parks
+from routers.assistants import router as assistants_router
 from routers.audio import router as audio_router
 from routers.images import router as images_router
 from routers.notifications import router as notifications_router
 from routers.parks import router as parks_router
-from routers.assistants import router as assistants_router
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    init_db()
+    yield
+
+
+app = FastAPI(
+    title="Dogy Backend API",
+    description="The Backend API for Dogy App",
+    lifespan=lifespan,
+)
 
 
 # Entry
@@ -33,7 +50,7 @@ app.include_router(images_router, tags=["images"])
 
 # LEGACY endpoints
 # Upload pet image
-@app.post("/upload_image/")
+@app.post("/upload_image")
 async def upload_image(file: UploadFile = File(...), name: str = Query(None)):
     try:
         # Generate a unique blob name
@@ -48,7 +65,7 @@ async def upload_image(file: UploadFile = File(...), name: str = Query(None)):
 
 
 # List pet images
-@app.get("/list_images/")
+@app.get("/list_images")
 async def list_images():
     try:
         # List all blobs in the container
@@ -59,7 +76,7 @@ async def list_images():
 
 
 # Delete pet image
-@app.delete("/delete_image/")
+@app.delete("/delete_image")
 async def delete_image(name: str = Query(...)):
     try:
         # Replace spaces with underscores in the blob name
@@ -153,23 +170,25 @@ app.include_router(parks_router, tags=["parks"])
 # #         raise HTTPException(status_code=500, detail=str(e))
 
 
-# @app.post("/search_dog_parks/")
-# async def search_dog_parks_endpoint(
-#     location: str = Query(...),
-#     radius: int = Query(5000),
-#     results_limit: int = Query(None),
-# ):
-#     try:
-#         search_parks = SearchParks(os.getenv("GOOGLE_MAPS_API_KEY"), location)
-#         search_results = search_parks.search_new_parks(
-#             location, radius
-#         ).extract_park_details()
-#         search_parks.insert_parks(
-#             search_results, Database(os.getenv("AZURE_COSMOSDB_CONNECTION_STRING"))
-#         )
-#         return JSONResponse(content={"results": results})
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
+@app.post("/search_dog_parks/")
+async def search_dog_parks_endpoint(db: Session = Depends(get_session)):
+    park = Park(
+        name="Test Park",
+        gmaps_id="test_id",
+        city="Stockholm",
+        country="Sweden",
+        geohash="ashahstd",
+        address="Test Address",
+        image="https://testimage.com",
+        latitude=Decimal(57.1124),
+        longitude=Decimal(2.01654),
+        website_url="https://testwebsite.com",
+        visited_by=[],
+    )
+
+    result = create_parks(parks=[park], session=db)
+    print(result)
+    return JSONResponse(content={"result": "success"})
 
 
 # Speech-to-text
