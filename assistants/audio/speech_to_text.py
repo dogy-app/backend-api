@@ -1,6 +1,8 @@
 import os
+
 from openai import OpenAI
 from openai.types.audio.transcription import Transcription
+
 
 def get_transcription(file_path: str) -> Transcription:
     """
@@ -17,8 +19,7 @@ def get_transcription(file_path: str) -> Transcription:
     # Transcribe the audio file
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     transcription = client.audio.transcriptions.create(
-        model="whisper-1",
-        file=audio_file
+        model="whisper-1", file=audio_file
     )
 
     # Returns: { text: transcripted }

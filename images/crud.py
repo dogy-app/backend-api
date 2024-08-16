@@ -1,6 +1,7 @@
 import os
 import uuid
-from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
+
+from azure.storage.blob import BlobServiceClient
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -11,7 +12,10 @@ AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")
 
 # Initialize the BlobServiceClient
-blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
+blob_service_client = BlobServiceClient.from_connection_string(
+    AZURE_STORAGE_CONNECTION_STRING
+)
+
 
 def generate_blob_name(file_name: str, custom_name: str = None) -> str:
     """
@@ -21,7 +25,9 @@ def generate_blob_name(file_name: str, custom_name: str = None) -> str:
     file_extension = os.path.splitext(file_name)[1]
 
     # Create a base name, replacing spaces with underscores
-    base_name = custom_name.replace(" ", "_") if custom_name else file_name.replace(" ", "_")
+    base_name = (
+        custom_name.replace(" ", "_") if custom_name else file_name.replace(" ", "_")
+    )
 
     # Generate a unique identifier
     unique_id = str(uuid.uuid4())
@@ -31,13 +37,17 @@ def generate_blob_name(file_name: str, custom_name: str = None) -> str:
 
     return blob_name
 
+
 def upload_blob(file, blob_name: str):
     """
     Upload a file to Azure Blob Storage with the given blob name.
     """
-    blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=blob_name)
+    blob_client = blob_service_client.get_blob_client(
+        container=AZURE_CONTAINER_NAME, blob=blob_name
+    )
     blob_client.upload_blob(file, overwrite=True)
     return blob_client.url
+
 
 def list_blobs():
     """
@@ -48,10 +58,13 @@ def list_blobs():
     blob_urls = [container_client.get_blob_client(blob).url for blob in blobs]
     return blob_urls
 
+
 def delete_blob(blob_name: str):
     """
     Delete a blob from Azure Blob Storage with the given blob name.
     """
-    blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=blob_name)
+    blob_client = blob_service_client.get_blob_client(
+        container=AZURE_CONTAINER_NAME, blob=blob_name
+    )
     blob_client.delete_blob()
     return f"Blob '{blob_name}' deleted successfully."
