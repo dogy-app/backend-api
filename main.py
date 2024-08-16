@@ -1,14 +1,11 @@
 from contextlib import asynccontextmanager
-from decimal import Decimal
 
 import uvicorn
-from fastapi import Depends, FastAPI
-from sqlmodel import Session
+from fastapi import FastAPI
 from starlette.responses import JSONResponse
 
-from database.core import get_session, init_db
-from database.models import Park
-from database.parks import create_parks
+from database.core import init_db
+from database.models import Place, validate_schema_place
 from routers.assistants import router as assistants_router
 from routers.audio import router as audio_router
 from routers.images import router as images_router
@@ -41,25 +38,18 @@ def api_entry():
     return JSONResponse(content={"message": "Welcome to the Dogy API!"})
 
 
-@app.post("/search_dog_parks/")
-async def search_dog_parks_endpoint(db: Session = Depends(get_session)):
-    park = Park(
-        name="Test Park",
-        gmaps_id="test_id",
-        city="Stockholm",
-        country="Sweden",
-        geohash="ashahstd",
-        address="Test Address",
-        image="https://testimage.com",
-        latitude=Decimal(57.1124),
-        longitude=Decimal(2.01654),
-        website_url="https://testwebsite.com",
-        visited_by=[],
-    )
-
-    result = create_parks(parks=[park], session=db)
-    print(result)
+@app.post("/validate_schema")
+async def validate_schema_endpoint(park: Place | None = None):
+    validate_schema_place(park)
     return JSONResponse(content={"result": "success"})
+
+
+# @app.post("/search_dog_parks/")
+# async def search_dog_parks_endpoint(
+#     db: Session = Depends(get_session), park: Place = None
+# ):
+#     result = validate_schema_place(park)
+#     return JSONResponse(content={"result": "success"})
 
 
 if __name__ == "__main__":

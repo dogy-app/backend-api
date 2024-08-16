@@ -4,6 +4,7 @@ from sqlmodel import Session, SQLModel, create_engine
 
 # DATABASE_URL = "sqlite:///database.db"
 DATABASE_URL = os.getenv("AZURE_POSTGRESQL_CONNECTION_STRING")
+
 engine = create_engine(DATABASE_URL, echo=True)
 
 

@@ -1,10 +1,16 @@
+import os
 from typing import Self
 
 import googlemaps
 import pygeohash as pgh
 import requests
-
-# from database import Database
+from database.parks import (
+    create_parks,
+    map_park_details,
+    map_parks_to_json,
+    search_parks_db,
+)
+from sqlmodel import Session
 from utils.azure import upload_image_to_azure
 
 
@@ -108,13 +114,13 @@ class SearchParks:
         photo = response.json()
         return photo["photoUri"]
 
-    def search_new_parks(self, location, radius=10000) -> Self:
+    def search_new_parks(self, max_result: int, radius: int) -> Self:
         """
         Search for parks in a given location based on latitude and longitude.
         :param location: The location to search for parks
         :param radius: The radius (meters) within which to search for parks
         """
-        location_metadata = self.get_location_metadata_geocode(location)
+        location_metadata = self.get_location_metadata_geocode(self.location)
         print(f"Location Metadata Geocode: {location_metadata}")
         headers = {
             "Content-Type": "application/json",
@@ -127,7 +133,7 @@ class SearchParks:
             headers=headers,
             json={
                 "includedTypes": ["dog_park"],
-                "maxResultCount": 1,
+                "maxResultCount": max_result,
                 "locationRestriction": {
                     "circle": {
                         "center": {
@@ -142,10 +148,12 @@ class SearchParks:
 
         if gmaps_response.status_code != 200:
             print(f"Failed to retrieve parks: {gmaps_response.text}")
-            return []
+            raise NotImplementedError
 
         if "places" not in gmaps_response.json():
             print("No places found")
+            self.places = []
+            return self
 
         results = gmaps_response.json()
         self.places = results["places"]
@@ -167,74 +175,57 @@ class SearchParks:
                 latitude=location_metadata["latitude"],
             ),
             "address": place["formattedAddress"],
-            "location": [location_metadata["latitude"], location_metadata["longitude"]],
+            "geom": f"POINT ({location_metadata['longitude']} {location_metadata['latitude']})",
             "website_url": place["websiteUri"],
-            "image": upload_image_to_azure(
-                self.get_photo_url(place["photos"][0]["name"]),
-                place["displayName"]["text"],
-            ),
-            "visitedBy": [],
+            "images": [
+                upload_image_to_azure(
+                    self.get_photo_url(place["photos"][0]["name"]),
+                    f'{place["id"]}-{place["displayName"]["text"]}',
+                )
+            ],
+            "type": "dog_park",
         }
 
-    def extract_park_details(self):
+    def extract_park_details(self) -> list[dict]:
         """
         Extract park details from the search results
         """
         results = self.places
+        if len(results) == 0:
+            return []
+
         park_details = map(self._extract_park_details, results)
 
         return list(park_details)
 
-    def insert_parks(self, park_details, database):
-        """
-        Insert parks into the database
-        :param database: The database to insert the parks into
-        """
-        database.connect_db().set_collection("places", "dog_parks")
-        database.insert_many(park_details)
-        database.create_geospatial_index("location")
 
-    def search_existing_parks(self, location, database, radius=10000):
-        """
-        Search for existing parks in a given location based on latitude and longitude.
-        :param location: The location to search for parks
-        :param radius: The radius (meters) within which to search for parks
-        """
-        location_metadata = self.get_location_metadata_geocode(location)
-        database.connect_db().set_collection("places", "dog_parks")
-        results = database.collection.find(
-            {
-                "location": {
-                    "$near": {
-                        "$geometry": {
-                            "type": "Point",
-                            "coordinates": [
-                                location_metadata["longitude"],
-                                location_metadata["latitude"],
-                            ],
-                        },
-                        "$maxDistance": radius,
-                    }
-                }
-            }
-        )
-
-        return results
-
-
-def search_parks(location: str, radius: int):
-    #     """
-    #     Search for parks near a location within a given radius
-    #     :param location: The location to search around (eg. Stockholm, Sweden)
-    #     :param radius: The radius around the location to search in
-    #     """
-    return ""
-
-
-#     database = Database(os.getenv("AZURE_COSMOSDB_CONNECTION_STRING"))
-#     database.connect_db().set_collection("places", "dog_parks")
-#     search_query = SearchParks(api_key="API_KEY", location="Stockholm, Sweden")
-#     search_query.search_new_parks(location, radius)
-#     park_details = search_query.extract_park_details()
-#     search_query.insert_parks(park_details, database)
-#     return park_details
+def search_parks(
+    session: Session, location: str, radius: int = 10000, max_result: int = 20
+):
+    """
+    Search for parks near a location within a given radius
+    :param location: The location to search around (eg. Stockholm, Sweden)
+    :param radius: The radius around the location to search in
+    """
+    search_park = SearchParks(api_key=os.getenv("GOOGLE_API_KEY"), location=location)
+    location_metadata = search_park.get_location_metadata_geocode(location)
+    existing_parks = search_parks_db(
+        session=session,
+        latitude=location_metadata["latitude"],
+        longitude=location_metadata["longitude"],
+        radius=radius,
+    )
+    print(len(existing_parks))
+    if len(existing_parks) < 3:
+        print(f"Searching new places for {location}")
+        search_park.search_new_parks(max_result=max_result, radius=radius)
+        parks = search_park.extract_park_details()
+        if len(parks) == 0:
+            print("No parks were found nearby")
+            return []
+        print("Adding new parks to the database")
+        create_parks(session=session, parks=map_park_details(parks))
+        return parks
+    else:
+        print("There are existing places nearby this location.")
+        return map_parks_to_json(existing_parks)
