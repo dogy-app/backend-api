@@ -10,8 +10,10 @@ from database.parks import (
     map_parks_to_json,
     search_parks_db,
 )
+from sqlalchemy import select
 from sqlmodel import Session
 from utils.azure import upload_image_to_azure
+from database.models import Place
 
 
 class SearchParks:
@@ -199,6 +201,45 @@ class SearchParks:
         return list(park_details)
 
 
+def point_to_str(point: str) -> str:
+    coords_str = point.replace("POINT (", "").replace(")", "")
+    longitude_str, latitude_str = coords_str.split(" ")
+    longitude = float(longitude_str.strip())
+    latitude = float(latitude_str.strip())
+    return {
+        "longitude": longitude,
+        "latitude": latitude,
+    }
+
+
+def new_park_to_json(parks: list[dict]) -> list[dict]:
+    return [
+        {
+            "gmaps_id": park["gmaps_id"],
+            "name": park["name"],
+            "city": park["city"],
+            "country": park["country"],
+            "geohash": park["geohash"],
+            "address": park["address"],
+            "location": point_to_str(park["geom"]),
+            "images": park["images"],
+            "website_url": park["website_url"],
+        }
+        for park in parks
+    ]
+
+
+def filter_parks(session: Session, parks_list: list[dict]):
+    query = select(Place.gmaps_id)
+    existing_gmaps_ids = {gmaps_id for (gmaps_id,) in session.exec(query).all()}
+
+    filtered_parks_list = [
+        park for park in parks_list if park["gmaps_id"] not in existing_gmaps_ids
+    ]
+
+    return filtered_parks_list
+
+
 def search_parks(
     session: Session, location: str, radius: int = 10000, max_result: int = 20
 ):
@@ -216,6 +257,7 @@ def search_parks(
         radius=radius,
     )
     print(len(existing_parks))
+    print(existing_parks)
     if len(existing_parks) < 3:
         print(f"Searching new places for {location}")
         search_park.search_new_parks(max_result=max_result, radius=radius)
@@ -224,8 +266,9 @@ def search_parks(
             print("No parks were found nearby")
             return []
         print("Adding new parks to the database")
-        create_parks(session=session, parks=map_park_details(parks))
-        return parks
+        filtered_parks = filter_parks(session, parks)
+        create_parks(session=session, parks=map_park_details(filtered_parks))
+        return new_park_to_json(filtered_parks)
     else:
         print("There are existing places nearby this location.")
         return map_parks_to_json(existing_parks)

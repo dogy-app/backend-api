@@ -11,14 +11,19 @@ class TranscriptionResponse(BaseModel):
     response: str
 
 
-@router.post("/transcriptions")
+@router.post("/transcriptions", response_model=TranscriptionResponse)
 async def transcribe_audio(file: UploadFile = File(...)):
     """
     Upload an audio file and get its transcription
 
-    :param file: Audio file to transcribe
-    :type file: UploadFile
-    :return: Transcription of the audio file
+    Args:
+        file (`UploadFile`): The audio file to be uploaded
+
+    Returns:
+        response (`TranscriptionResponse`): The transcription of the audio file
+
+    Raises:
+        `HTTPException`: Raises HTTP 500 if any error happened
     """
 
     try:

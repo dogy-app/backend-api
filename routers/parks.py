@@ -11,20 +11,28 @@ router = APIRouter(prefix="/parks")
 
 
 class SearchParkQuery(BaseModel):
-    location: str
+    location: str = "Stockholm, Sweden"
     max_result: int = 20
     radius: int = 10000
 
 
-@router.post("/search", response_model=Park)
+@router.post("/search", response_model=list[Park])
 async def search_park(
     search_query: SearchParkQuery,
     db: Session = Depends(get_session),
 ):
     """
     Search for parks near a location within a given radius
-    :param location: The location to search around (eg. Stockholm, Sweden)
-    :param radius: The radius around the location to search in
+
+    Args:
+        search_query (`SearchParkQuery`): The search query
+        db (`Session`): The database session
+
+    Returns:
+        parks (list[`Park`]): The list of parks near the location.
+
+    Raises:
+        `HTTPException`: Raises HTTP 500 if any error happened
     """
     try:
         search_results = search_parks(

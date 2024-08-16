@@ -1,7 +1,7 @@
-from geoalchemy2 import WKBElement
 from shapely import wkb
 from sqlalchemy import text
 from sqlmodel import Session
+from binascii import unhexlify
 
 from .models import Place
 
@@ -10,9 +10,10 @@ def map_park_details(park_details: list[dict]) -> list[Place]:
     return [Place(**park) for park in park_details]
 
 
-def wkb_to_point(wkb_element: WKBElement):
-    wkb_bytes = bytes(wkb_element.data)
-    return wkb.loads(wkb_bytes)
+def wkb_to_coords(wkb_element: str):
+    wkb_bytes = unhexlify(wkb_element)
+    point = wkb.loads(wkb_bytes)
+    return point.x, point.y
 
 
 def search_parks_db(
@@ -71,7 +72,7 @@ def map_parks_to_json(results):
         ) = item
 
         # Convert WKBElement to POINT
-        point = wkb_to_point(wkb_element)
+        longitude, latitude = wkb_to_coords(wkb_element)
 
         # Create the dictionary
         record = {
@@ -81,7 +82,10 @@ def map_parks_to_json(results):
             "country": country,
             "geohash": geohash,
             "address": address,
-            "geom": point.wkt,  # Convert POINT to WKT string
+            "location": {
+                "latitude": latitude,
+                "longitude": longitude,
+            },
             "website_url": website_url,
             "images": images,
         }
