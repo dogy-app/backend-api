@@ -1,11 +1,8 @@
-import os
-
 from fastapi import APIRouter, HTTPException
-from openai import AsyncOpenAI
-from starlette.responses import JSONResponse
 from pydantic import BaseModel, Field
+from starlette.responses import JSONResponse
 
-from assistants.agents import ask_dogy, retrieve_assistant
+from assistants.agents import infererence_completion
 from assistants.threads import create_thread
 from assistants.types import UserMessage
 
@@ -61,43 +58,7 @@ async def dogy_assistant(user_message: UserMessage):
         `HTTPException`: Raises HTTP 500 if any error happened
     """
     try:
-        client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        selected_assistant = await retrieve_assistant(user_message.user_message)
-        print(selected_assistant)
-
-        dogy_id = os.getenv("DOGY_COMPANION_ID")
-        nutrition_assistant_id = os.getenv("NUTRITION_ASSISTANT_ID")
-
-        if selected_assistant == "none":
-            assistant_id = dogy_id
-        elif selected_assistant == "nutrition_assistant":
-            assistant_id = nutrition_assistant_id
-        else:
-            raise HTTPException(
-                status_code=500, detail="Assistant ID failed to retrieve"
-            )
-
-        await client.beta.assistants.retrieve(assistant_id=assistant_id)
-        if not user_message.thread_id:
-            ids = await create_thread()
-            user_message.thread_id = ids["thread_id"]
-
-        print(f"Assistant ID: {assistant_id}")
-        print(f"Thread ID: {user_message.thread_id}")
-        response = await ask_dogy(
-            user_message.user_message,
-            user_message.user_name,
-            assistant_id,
-            user_message.thread_id,
-        )
-
-        return JSONResponse(
-            content={
-                "response": response,
-                "assistant_selected": selected_assistant,
-                "assistant_id": assistant_id,
-                "thread_id": user_message.thread_id,
-            }
-        )
+        response = await infererence_completion(user_message)
+        return JSONResponse(content=response)
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))

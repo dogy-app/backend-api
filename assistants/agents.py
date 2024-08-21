@@ -5,8 +5,11 @@ from typing import Optional
 
 from azure.appconfiguration.provider import load
 from dotenv import load_dotenv
+from assistants.threads import create_thread
 from openai import AsyncAssistantEventHandler, AsyncOpenAI
 from typing_extensions import override
+
+from assistants.types import UserMessage
 
 # Load environment variables
 load_dotenv()
@@ -116,6 +119,8 @@ class EventHandler(AsyncAssistantEventHandler):
 
 # Assistant Selector
 async def retrieve_assistant(user_message: str) -> str:
+    dogy_id = os.getenv("DOGY_COMPANION_ID")
+    nutrition_assistant_id = os.getenv("NUTRITION_ASSISTANT_ID")
     ASSISTANT_SELECTOR_PROMPT = get_key_value("ASSISTANT_SELECTOR_PROMPT")
 
     response = await client.chat.completions.create(
@@ -128,7 +133,13 @@ async def retrieve_assistant(user_message: str) -> str:
     assistant = response.choices[0].message.content
     print(f"choices: {response}")
     print(assistant)
-    return assistant
+
+    if assistant == "none":
+        assistant_id = dogy_id
+    elif assistant == "nutrition_assistant":
+        assistant_id = nutrition_assistant_id
+
+    return assistant_id
 
 
 # Main function for ask dogy
@@ -156,6 +167,34 @@ async def ask_dogy(
     # Skip the first response (assuming it's the duplicate "Hi")
     return "".join([str(response) for response in event_handler.responses[1:]])
     # return "".join([str(response) for response in event_handler.responses])
+
+
+async def infererence_completion(user_message: UserMessage):
+    """
+    This function is used to test the completion of the model.
+
+    Args:
+        user_message (`str`): The user message
+
+    Returns:
+        response (`str`): The response from Dogy
+    """
+
+    assistant_id = await retrieve_assistant(user_message.user_message)
+    await client.beta.assistants.retrieve(assistant_id=assistant_id)
+
+    if not user_message.thread_id:
+        ids = await create_thread()
+        user_message.thread_id = ids["thread_id"]
+
+    response = await ask_dogy(
+        user_message.user_message,
+        user_message.user_name,
+        assistant_id,
+        user_message.thread_id,
+    )
+
+    return response
 
 
 # Main function to run the ask_dogy function

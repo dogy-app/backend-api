@@ -13,16 +13,16 @@ from routers.notifications import router as notifications_router
 from routers.parks import router as parks_router
 
 
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    init_db()
-    yield
+# @asynccontextmanager
+# async def lifespan(_: FastAPI):
+#     init_db()
+#     yield
 
 
 app = FastAPI(
     title="Dogy Backend API",
     description="The Backend API for Dogy App",
-    lifespan=lifespan,
+    # lifespan=lifespan,
 )
 
 app.include_router(images_router, tags=["images"])
