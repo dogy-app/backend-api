@@ -1,7 +1,7 @@
 import asyncio
 import json
 import os
-from typing import Optional
+from typing import AsyncGenerator, Optional
 
 from azure.appconfiguration.provider import load
 from dotenv import load_dotenv
@@ -143,6 +143,34 @@ async def retrieve_assistant(user_message: str) -> str:
 
 
 # Main function for ask dogy
+async def ask_dogy_sse(
+    user_message: str,
+    user_name: str,
+    assistant_id: Optional[str],
+    thread_id: Optional[str],
+) -> AsyncGenerator[str, None]:
+    await client.beta.threads.messages.create(
+        thread_id=thread_id,
+        role="user",
+        content=f"{user_message}. Address me as {user_name}",
+    )
+
+    event_handler = EventHandler()
+
+    async with client.beta.threads.runs.stream(
+        thread_id=thread_id,
+        assistant_id=assistant_id,
+        event_handler=event_handler,
+    ) as stream:
+        async for text in stream.text_deltas:
+            yield f"data: {text}\n"
+        # await stream.until_done()
+
+    # Skip the first response (assuming it's the duplicate "Hi")
+    # return "".join([str(response) for response in event_handler.responses])
+
+
+# Main function for ask dogy
 async def ask_dogy(
     user_message: str,
     user_name: str,
@@ -169,7 +197,7 @@ async def ask_dogy(
     # return "".join([str(response) for response in event_handler.responses])
 
 
-async def infererence_completion(user_message: UserMessage):
+async def inference_completion(user_message: UserMessage):
     """
     This function is used to test the completion of the model.
 
@@ -197,11 +225,36 @@ async def infererence_completion(user_message: UserMessage):
     return response
 
 
+async def inference_completion_sse(user_message: UserMessage):
+    """
+    This function is used to test the completion of the model.
+
+    Args:
+        user_message (`str`): The user message
+
+    Returns:
+        response (`str`): The response from Dogy
+    """
+
+    assistant_id = await retrieve_assistant(user_message.user_message)
+    await client.beta.assistants.retrieve(assistant_id=assistant_id)
+
+    if not user_message.thread_id:
+        ids = await create_thread()
+        user_message.thread_id = ids["thread_id"]
+
+    async for response in ask_dogy_sse(
+        user_message.user_message,
+        user_message.user_name,
+        assistant_id,
+        user_message.thread_id,
+    ):
+        yield response
+
+
 # Main function to run the ask_dogy function
 if __name__ == "__main__":
     client = AsyncOpenAI(api_key=openai_key)
     # response = asyncio.run(ask_dogy(client, "Hello, how are you?", "Paul"))
-    response = asyncio.run(
-        ask_dogy(client, "Hello, how are you?", "Sheape", "THREAD_ID")
-    )
+    response = asyncio.run(ask_dogy_sse(client, "Hello, how are you?", "Sheape"))
     print(response)
