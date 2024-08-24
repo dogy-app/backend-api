@@ -7,7 +7,7 @@ import pytz
 import schedule
 from dotenv import load_dotenv
 
-import notifications
+from notifications.schedule import send_daily_notification
 from utils.firebase import db
 
 load_dotenv()
@@ -73,7 +73,7 @@ def daily_notification_job():
                         logger.info(
                             f"Notification for user {user_id} should go out now: {format_timedelta(time_to_send)} left"
                         )
-                        notifications.send_daily_notification(
+                        send_daily_notification(
                             reminder["title"],
                             f"{reminder['message']} {reminder['pet_name']} today 🐾 !",
                             push_ids,
