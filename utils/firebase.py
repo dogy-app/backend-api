@@ -9,7 +9,7 @@ load_dotenv()
 AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 AZURE_STORAGE_CONTAINER_NAME = os.getenv("AZURE_ESSENTIALS_CONTAINER_NAME")
 AZURE_STORAGE_BLOB_NAME = os.getenv("AZURE_STORAGE_FIREBASE_KEY_BLOB_NAME")
-LOCAL_FILE_PATH = "../firebase-service-account.json"
+LOCAL_FILE_PATH = "firebase-service-account.json"
 
 
 def download_file_from_azure():
