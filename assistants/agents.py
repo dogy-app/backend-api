@@ -176,7 +176,7 @@ async def ask_dogy(
     user_name: str,
     assistant_id: Optional[str],
     thread_id: Optional[str],
-) -> str:
+) -> dict:
     await client.beta.threads.messages.create(
         thread_id=thread_id,
         role="user",
@@ -193,7 +193,14 @@ async def ask_dogy(
         await stream.until_done()
 
     # Skip the first response (assuming it's the duplicate "Hi")
-    return "".join([str(response) for response in event_handler.responses[1:]])
+    return {
+        "response": "".join(
+            [str(response) for response in event_handler.responses[1:]]
+        ),
+        "assistant_id": assistant_id,
+        "thread_id": thread_id,
+        "assistant_selected": "nutrition_assistant",
+    }
     # return "".join([str(response) for response in event_handler.responses])
 
 
@@ -242,6 +249,9 @@ async def inference_completion_sse(user_message: UserMessage):
     if not user_message.thread_id:
         ids = await create_thread()
         user_message.thread_id = ids["thread_id"]
+
+    yield f"assistant_id: {assistant_id}\n"
+    yield f"thread_id: {user_message.thread_id}\n"
 
     async for response in ask_dogy_sse(
         user_message.user_message,

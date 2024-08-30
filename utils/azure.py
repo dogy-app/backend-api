@@ -34,9 +34,14 @@ def upload_image_to_azure(photo_url, name):
         blob_client = blob_service_client.get_blob_client(
             container=AZURE_STORAGE_CONTAINER_NAME, blob=blob_name
         )
-        blob_client.upload_blob(image_data, overwrite=True)
-        blob_url = blob_client.url
-        print(f"Uploaded image to Azure: {blob_url}")
+        try:
+            blob_client.get_blob_properties()
+            blob_url = blob_client.url
+            print(f"Image was already uploaded: {blob_url}")
+        except:
+            blob_client.upload_blob(image_data, overwrite=True)
+            blob_url = blob_client.url
+            print(f"Uploaded image to Azure: {blob_url}")
         return blob_url
     except requests.exceptions.RequestException as e:
         print(f"Error downloading image: {e}")

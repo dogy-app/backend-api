@@ -40,13 +40,13 @@ class UserPetLink(SQLModel, table=True):
 class Place(PlaceBase, table=True):
     __tablename__ = "places"
     id: int | None = Field(default=None, primary_key=True)
-    gmaps_id: str
-    city: str
-    country: str
-    geohash: str
-    address: str
+    gmaps_id: str | None = None
+    city: str | None = None
+    country: str | None = None
+    geohash: str | None = None
+    address: str | None = None
     images: list[str] = Field(sa_column=Column(ARRAY(String), nullable=True))
-    website_url: str
+    website_url: str | None = None
     visited_by: list["User"] = Relationship(
         back_populates="visited_places", link_model=UserPlaceLink
     )
@@ -55,7 +55,7 @@ class Place(PlaceBase, table=True):
 class User(TimestampMixin, table=True):
     __tablename__ = "users"
     id: int | None = Field(default=None, primary_key=True)
-    user_id: str
+    user_id: str | None = None
     notification_id: int | None = Field(default=None, foreign_key="notifications.id")
     notification: Optional["Notification"] = Relationship(back_populates="user")
     playtimes: list["Playtime"] | None = Relationship(
@@ -71,12 +71,12 @@ class User(TimestampMixin, table=True):
     playtime_reminder: Optional["PlaytimeReminder"] = Relationship(
         back_populates="user"
     )
-    has_onboarded: bool
+    has_onboarded: bool | None = None
     purpose: str | None = None
     photo_url: str | None = None
     pets: list["Pet"] = Relationship(back_populates="owners", link_model=UserPetLink)
     role: str | None = None
-    timezone: str
+    timezone: str | None = None
     visited_places: list[Place] = Relationship(
         back_populates="visited_by", link_model=UserPlaceLink
     )
@@ -88,11 +88,11 @@ class Notification(SQLModel, table=True):
     user: Optional[User] = Relationship(
         back_populates="notification", sa_relationship_kwargs={"uselist": False}
     )
-    dogy_notification: bool
-    daily_notification: bool
-    park_notification: bool
-    notifications_enabled: bool
-    last_notification_sent: datetime | None
+    dogy_notification: bool | None = None
+    daily_notification: bool | None = None
+    park_notification: bool | None = None
+    notifications_enabled: bool | None = None
+    last_notification_sent: datetime | None = None
     push_ids: list[str] = Field(sa_column=Column(ARRAY(String), nullable=True))
 
 
@@ -100,8 +100,8 @@ class Playtime(SQLModel, table=True):
     __tablename__ = "playtimes"
     id: int | None = Field(default=None, primary_key=True)
     place_id: int | None = Field(default=None, foreign_key="places.id")
-    playtime: datetime
-    status: str
+    playtime: datetime | None = None
+    status: str | None = None
     users: list[User] | None = Relationship(
         back_populates="playtimes", link_model=UserPlaytimeLink
     )
@@ -111,8 +111,8 @@ class PlaytimeReminder(SQLModel, table=True):
     __tablename__ = "playtime_reminders"
     id: int | None = Field(default=None, primary_key=True)
     user: User | None = Relationship(back_populates="playtime_reminder")
-    hour: int
-    minute: int
+    hour: int | None = None
+    minute: int | None = None
     title: str | None = None
     subtitle: str | None = None
     message: str | None = None
@@ -123,14 +123,14 @@ class PlaytimeReminder(SQLModel, table=True):
 class Pet(TimestampMixin, table=True):
     __tablename__ = "pets"
     id: int | None = Field(default=None, primary_key=True)
-    pet_id: str
-    name: str
+    pet_id: str | None = None
+    name: str | None = None
     agression_level: list[str] | None = Field(
         sa_column=Column(ARRAY(String), nullable=True)
     )
     behaviour: list[str] | None = Field(sa_column=Column(ARRAY(String), nullable=True))
-    birthday: str
-    breed: str
+    birthday: str | None = None
+    breed: str | None = None
     interaction: list[str] | None = Field(
         sa_column=Column(ARRAY(String), nullable=True)
     )
@@ -145,9 +145,9 @@ class Pet(TimestampMixin, table=True):
     reactivity: list[str] | None = Field(sa_column=Column(ARRAY(String), nullable=True))
     sex: str | None = None
     size: str | None = None
-    sterilised: str
-    traits: str
-    weight: int
+    sterilised: str | None = None
+    traits: str | None = None
+    weight: int | None = None
 
 
 def validate_schema_place(example):
