@@ -264,6 +264,7 @@ def search_parks(
         latitude=location_metadata["latitude"],
         longitude=location_metadata["longitude"],
         radius=radius,
+        limit=max_result,
     )
     print(len(existing_parks))
     print(existing_parks)

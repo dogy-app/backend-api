@@ -17,7 +17,7 @@ def wkb_to_coords(wkb_element: str):
 
 
 def search_parks_db(
-    *, session: Session, latitude: float, longitude: float, radius: int
+    *, session: Session, latitude: float, longitude: float, radius: int, limit: int
 ):
     # point = WKTElement(f"POINT({longitude:.4f} {latitude:.4f})", srid=4326)
     # query = select(
@@ -36,7 +36,8 @@ def search_parks_db(
     SELECT geom, name, description, gmaps_id, city, country, geohash, address, images, website_url
     FROM places
     WHERE type = 'dog_park'
-    AND ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)::geography, :radius);
+    AND ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)::geography, :radius)
+    LIMIT :limit;
     """)
 
     results = session.execute(
@@ -45,6 +46,7 @@ def search_parks_db(
             "longitude": round(longitude, 4),
             "latitude": round(latitude, 4),
             "radius": radius,
+            "limit": limit,
         },
     ).fetchall()
 
