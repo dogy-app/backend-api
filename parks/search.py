@@ -167,6 +167,20 @@ class SearchParks:
         :param place: The place to extract details from
         """
         location_metadata = self.get_location_metadata(place)
+        if "websiteUri" not in place:
+            place["websiteUri"] = None
+
+        if "formattedAddress" not in place:
+            place["formattedAddress"] = None
+
+        if "photos" not in place or len(place["photos"]) == 0:
+            gmaps_photo = None
+        else:
+            gmaps_photo = upload_image_to_azure(
+                self.get_photo_url(place["photos"][0]["name"]),
+                f'{place["id"]}-{place["displayName"]["text"]}',
+            )
+
         return {
             "gmaps_id": place["id"],
             "name": place["displayName"]["text"],
@@ -179,12 +193,7 @@ class SearchParks:
             "address": place["formattedAddress"],
             "geom": f"POINT ({location_metadata['longitude']} {location_metadata['latitude']})",
             "website_url": place["websiteUri"],
-            "images": [
-                upload_image_to_azure(
-                    self.get_photo_url(place["photos"][0]["name"]),
-                    f'{place["id"]}-{place["displayName"]["text"]}',
-                )
-            ],
+            "images": [gmaps_photo],
             "type": "dog_park",
         }
 
@@ -201,7 +210,7 @@ class SearchParks:
         return list(park_details)
 
 
-def point_to_str(point: str) -> str:
+def point_to_str(point: str) -> dict:
     coords_str = point.replace("POINT (", "").replace(")", "")
     longitude_str, latitude_str = coords_str.split(" ")
     longitude = float(longitude_str.strip())
