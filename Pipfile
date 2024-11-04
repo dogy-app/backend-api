@@ -99,6 +99,11 @@ psycopg2-binary = "*"
 sqlmodel = "*"
 geoalchemy2 = "*"
 sqlalchemy = "*"
+langgraph = "*"
+langchain-community = "*"
+langchain-openai = "*"
+azure-search-documents = ">=11.4"
+azure-identity = "*"
 
 [dev-packages]
 pyright = "*"
