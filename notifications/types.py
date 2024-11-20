@@ -22,6 +22,7 @@ class UserNotification(BaseModel):
     message: str
     user_id: str
     subtitle: str = None
+    data: dict = None
 
 
 class NotificationSchedule(BaseModel):

@@ -87,6 +87,7 @@ async def send_notification_to_user_endpoint(user_notification: UserNotification
         user_notification.message,
         user_notification.user_id,
         user_notification.subtitle,
+        user_notification.data,
     )
 
     if "error" in response:
