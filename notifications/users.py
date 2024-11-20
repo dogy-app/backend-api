@@ -7,7 +7,7 @@ from .core import ONESIGNAL_API_KEY, ONESIGNAL_APP_ID, logger
 
 # Send a notification to a user
 def send_notification_to_user(
-    title: str, message: str, user_id: str, subtitle: str = None
+    title: str, message: str, user_id: str, subtitle: str = None, data: dict = None
 ):
     try:
         user_ref = db.collection("users").document(user_id)
@@ -34,6 +34,8 @@ def send_notification_to_user(
         }
         if subtitle:
             payload["subtitle"] = {"en": subtitle}
+        if data:
+            payload["data"] = data
 
         response = requests.post(url, headers=headers, json=payload)
         try:
