@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Azure storage connection string and container name
-AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")
+AZURE_STORAGE_CONNECTION_STRING: str = os.getenv("AZURE_STORAGE_CONNECTION_STRING", "")
+AZURE_CONTAINER_NAME: str = os.getenv("AZURE_CONTAINER_NAME", "")
 
 # Initialize the BlobServiceClient
 blob_service_client = BlobServiceClient.from_connection_string(
@@ -17,12 +17,16 @@ blob_service_client = BlobServiceClient.from_connection_string(
 )
 
 
-def generate_blob_name(file_name: str, custom_name: str = None) -> str:
+def generate_blob_name(file_name: str, custom_name: str | None = None) -> str:
     """
     Generate a unique blob name using the custom name or file name, and appending a unique identifier.
     """
+    if (len(file_name) == 0):
+        raise ValueError("File name cannot be empty.")
+
     # Extract the file extension
     file_extension = os.path.splitext(file_name)[1]
+    file_name = os.path.splitext(file_name)[0]
 
     # Create a base name, replacing spaces with underscores
     base_name = (
