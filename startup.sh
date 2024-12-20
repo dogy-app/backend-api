@@ -2,4 +2,4 @@
 gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app &
 
 # Start the worker in the background
-python watchdog_workers.py
+# python watchdog_workers.py
