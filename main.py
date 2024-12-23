@@ -7,7 +7,6 @@ from starlette.responses import JSONResponse
 # from database.core import init_db
 from database.models import Place, validate_schema_place
 from routers.images import router as images_router
-from routers.notifications import router as notifications_router
 from routers.parks import router as parks_router
 
 # @asynccontextmanager
@@ -24,7 +23,7 @@ app = FastAPI(
 
 app.include_router(images_router, tags=["images"])
 app.include_router(parks_router, tags=["parks"])
-app.include_router(notifications_router, tags=["notifications"])
+# app.include_router(notifications_router, tags=["notifications"])
 
 
 # Entry
