@@ -1,13 +1,15 @@
 # from contextlib import asynccontextmanager
 
+# from database.core import init_db
 import uvicorn
 from fastapi import FastAPI
 from starlette.responses import JSONResponse
 
-# from database.core import init_db
-from database.models import Place, validate_schema_place
-from routers.images import router as images_router
-from routers.parks import router as parks_router
+from app.database.models import Place, validate_schema_place
+from app.routers.images import router as images_router
+from app.routers.parks import router as parks_router
+from app.routers.pets import router as pets_router
+from app.routers.users import router as users_router
 
 # @asynccontextmanager
 # async def lifespan(_: FastAPI):
@@ -23,6 +25,8 @@ app = FastAPI(
 
 app.include_router(images_router, tags=["images"])
 app.include_router(parks_router, tags=["parks"])
+app.include_router(users_router, tags=["users"])
+app.include_router(pets_router, tags=["pets"])
 # app.include_router(notifications_router, tags=["notifications"])
 
 

@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from images.crud import generate_blob_name
+from app.images.crud import generate_blob_name
 
 
 @pytest.mark.parametrize(

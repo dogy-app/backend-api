@@ -1,7 +1,8 @@
+from binascii import unhexlify
+
 from shapely import wkb
 from sqlalchemy import text
 from sqlmodel import Session
-from binascii import unhexlify
 
 from .models import Place
 

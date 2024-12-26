@@ -4,16 +4,17 @@ from typing import Self
 import googlemaps
 import pygeohash as pgh
 import requests
-from database.parks import (
+from sqlalchemy import select
+from sqlmodel import Session
+
+from app.common.utils.azure import upload_image_to_azure
+from app.database.models import Place
+from app.database.parks import (
     create_parks,
     map_park_details,
     map_parks_to_json,
     search_parks_db,
 )
-from sqlalchemy import select
-from sqlmodel import Session
-from utils.azure import upload_image_to_azure
-from database.models import Place
 
 
 class SearchParks:

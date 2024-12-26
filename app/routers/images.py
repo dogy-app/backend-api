@@ -2,7 +2,7 @@ from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
 from starlette.responses import JSONResponse
 
-from images.crud import delete_blob, generate_blob_name, list_blobs, upload_blob
+from app.images.crud import delete_blob, generate_blob_name, list_blobs, upload_blob
 
 router = APIRouter(prefix="/images")
 
