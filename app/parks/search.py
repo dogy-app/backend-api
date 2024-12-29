@@ -1,4 +1,3 @@
-import os
 from typing import Self
 
 import googlemaps
@@ -7,6 +6,7 @@ import requests
 from sqlalchemy import select
 from sqlmodel import Session
 
+from app.common.utils import get_secret
 from app.common.utils.azure import upload_image_to_azure
 from app.database.models import Place
 from app.database.parks import (
@@ -258,7 +258,7 @@ def search_parks(
     :param location: The location to search around (eg. Stockholm, Sweden)
     :param radius: The radius around the location to search in
     """
-    search_park = SearchParks(api_key=os.getenv("GOOGLE_API_KEY"), location=location)
+    search_park = SearchParks(api_key=get_secret('backendapi-prod-google-api-key'), location=location)
     location_metadata = search_park.get_location_metadata_geocode(location)
     existing_parks = search_parks_db(
         session=session,

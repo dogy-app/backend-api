@@ -1,21 +1,18 @@
 import mimetypes
-import os
 from io import BytesIO
 
 import requests
+from azure.identity import EnvironmentCredential
 from azure.storage.blob import BlobServiceClient
-from dotenv import load_dotenv
 
-load_dotenv()
+from app.config import get_settings
 
-AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-AZURE_STORAGE_CONTAINER_NAME = os.getenv("AZURE_PARK_CONTAINER_NAME")
+credential = EnvironmentCredential()
+settings = get_settings()
+
 
 # Initialize the Azure Blob service client
-blob_service_client = BlobServiceClient.from_connection_string(
-    AZURE_STORAGE_CONNECTION_STRING
-)
-
+blob_service_client = BlobServiceClient(account_url=settings.storage_account_url, credential=credential)
 
 def upload_image_to_azure(photo_url, name):
     try:
@@ -24,6 +21,10 @@ def upload_image_to_azure(photo_url, name):
         image_data = BytesIO(response.content)
 
         content_type = response.headers.get("Content-Type")
+        if not content_type:
+            print(f"Unknown content type for image: {photo_url}")
+            content_type = "image/jpeg"
+
         file_extension = mimetypes.guess_extension(content_type)
 
         if not file_extension:
@@ -32,7 +33,7 @@ def upload_image_to_azure(photo_url, name):
 
         blob_name = f"{name.replace(' ', '_')}{file_extension}"
         blob_client = blob_service_client.get_blob_client(
-            container=AZURE_STORAGE_CONTAINER_NAME, blob=blob_name
+            container=settings.storage_pet_container_name, blob=blob_name
         )
         try:
             blob_client.get_blob_properties()
@@ -54,7 +55,7 @@ def upload_image_to_azure(photo_url, name):
 def is_image_already_uploaded(blob_name):
     try:
         blob_client = blob_service_client.get_blob_client(
-            container=AZURE_STORAGE_CONTAINER_NAME, blob=blob_name
+            container=settings.storage_pet_container_name, blob=blob_name
         )
         return blob_client.exists()
     except Exception as e:
@@ -63,4 +64,4 @@ def is_image_already_uploaded(blob_name):
 
 
 def get_blob_url(blob_name):
-    return f"https://{blob_service_client.account_name}.blob.core.windows.net/{AZURE_STORAGE_CONTAINER_NAME}/{blob_name}"
+    return f"{settings.storage_account_url}/{settings.storage_pet_container_name}/{blob_name}"
