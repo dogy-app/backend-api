@@ -1,4 +1,0 @@
-ruff
-pyright
-pytest
-pyflakes
