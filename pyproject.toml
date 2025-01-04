@@ -1,7 +1,43 @@
+[project]
+name = "dogy-backend"
+version = "0.1.1"
+description = "Backend for Dogy App."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "azure-identity>=1.19.0",
+    "azure-keyvault-secrets>=4.9.0",
+    "azure-storage-blob>=12.24.0",
+    "fastapi[standard]>=0.115.6",
+    "geoalchemy2>=0.16.0",
+    "geojson>=3.1.0",
+    "googlemaps>=4.10.0",
+    "psycopg2-binary>=2.9.10",
+    "pydantic-settings>=2.7.0",
+    "pygeohash>=1.2.0",
+    "pytest-cov>=6.0.0",
+    "shapely>=2.0.6",
+    "sqlmodel>=0.0.22",
+]
+
 [tool.ruff.lint]
-extend-select = ["I", "N", "C4", "TCH", "SIM", "FAST"]
+extend-select = ["I", "F", "N", "C4", "TCH", "SIM", "FAST"]
 ignore = []
+
+[dependency-groups]
+dev = [
+    "debugpy>=1.8.11",
+    "pyright>=1.1.391",
+    "pytest>=8.3.4",
+    "ruff>=0.8.3",
+]
 
 [tool.ruff]
 show-fixes = true
-target-version = "py37"
+target-version = "py312"
+
+[lint.isort]
+known-local-folder = ["app"]
+force-sort-within-sections = true
+order-by-type = true
+from-first = false

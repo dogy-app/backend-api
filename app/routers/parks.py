@@ -1,11 +1,11 @@
-from database.core import get_session
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session
 from starlette.responses import JSONResponse
 
-from parks.core import Park
-from parks.search import search_parks
+from app.database.core import get_session
+from app.parks.core import Park
+from app.parks.search import search_parks
 
 router = APIRouter(prefix="/parks")
 

@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 import pytz
 import schedule
 from dotenv import load_dotenv
-
 from notifications.schedule import send_daily_notification
 from utils.firebase import db
 

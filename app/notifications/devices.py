@@ -1,5 +1,4 @@
 from google.cloud.firestore import ArrayUnion
-
 from utils.firebase import db
 
 from .core import logger

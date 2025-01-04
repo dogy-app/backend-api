@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException
-
 from notifications.channels import (
     send_notification_to_channel,
     subscribe_to_channel,

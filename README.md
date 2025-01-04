@@ -1,21 +1,18 @@
 <!-- @format -->
 
-# dogy.backend
+# Dogy Backend
 
-Backend for dogy app
+Backend service for dogy app
 
-### Stetps to start
+### Steps to start
 
 1. Create virtual environment
-   `python -m venv venv`
-2. Create `.env` file add these keys:
-   `AZURE_STORAGE_CONNECTION_STRING=KEY`
-   `AZURE_CONTAINER_NAME=KEY`
-   `AZURE_ESSENTIALS_CONTAINER_NAME=KEY`
-   `AZURE_STORAGE_FIREBASE_KEY_BLOB_NAME=KEY`
-   `GOOGLE_API_KEY=KEY`
-   `OPENAI_API_KEY=KEY`
-   `DOGY_COMPANION_ID=KEY`
-3. Install requirements
-   `pip install -r requirements.txt`
-4. run `uvicorn main:app --reload` to start dev server
+   `python3 -m venv .venv`
+2. Create `.env` file add the keys from `.env.example`.
+3. Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and
+   install the dependencies
+   `uv sync`
+4. Request for private network access for internal resources from
+   [@Sheape](https://github.com/Sheape). This is because all resources in Azure
+   are secured with private network and we follow the principle of zero trust network security.
+4. Run `fastapi dev` to start dev server.
