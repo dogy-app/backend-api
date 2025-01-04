@@ -1,7 +1,8 @@
-from contextlib import asynccontextmanager
+# from contextlib import asynccontextmanager
 
 import uvicorn
-from database.core import init_db
+
+# from database.core import init_db
 from fastapi import FastAPI
 from starlette.responses import JSONResponse
 
@@ -11,17 +12,16 @@ from app.routers.parks import router as parks_router
 from app.routers.pets import router as pets_router
 from app.routers.users import router as users_router
 
-
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    init_db()
-    yield
+# @asynccontextmanager
+# async def lifespan(_: FastAPI):
+#     init_db()
+#     yield
 
 
 app = FastAPI(
     title="Dogy Backend API",
     description="The Backend API for Dogy App",
-    lifespan=lifespan,
+    # lifespan=lifespan,
 )
 
 app.include_router(images_router, tags=["images"])
