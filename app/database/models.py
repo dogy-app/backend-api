@@ -21,7 +21,8 @@ class PlaceBase(TimestampMixin, GeolocationMixin):
     pass
 
 class Place(SQLModel, table=True):
-    """place table is already used by PostGIS extension, thus we need to use a different name."""
+    """place table is already used by PostGIS extension, thus we need to use a
+    different name."""
     __tablename__ = declared_attr(lambda cls: "places")
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     gmaps_id: str | None = Field(default=None, max_length=27)
@@ -40,8 +41,7 @@ class Place(SQLModel, table=True):
 
 class PlaceMetadata(SQLModel, table=True):
     __tablename__ = declared_attr(lambda cls: "place_metadata")
-    id: UUID = Field(default_factory=uuid4, primary_key=True,
-                              nullable=False, index=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     city: str | None = None
     country: str | None = None
     full_address: str | None = None
@@ -55,15 +55,14 @@ class PlaceMetadata(SQLModel, table=True):
 
 
 class UserPetLink(SQLModel, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
-    user_id: UUID | None = Field(default=None, foreign_key="user.id")
-    pet_id: UUID | None = Field(default=None, foreign_key="pet.id")
+    user_id: UUID = Field(nullable=False, foreign_key="user.id", primary_key=True)
+    pet_id: UUID = Field(nullable=False, foreign_key="pet.id", primary_key=True)
     purpose: str | None = None
     role: UserRole | None = None
 
 
 class User(TimestampMixin, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True, nullable=False)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str | None = None
     email: str | None = None
     gender: Gender | None = None
@@ -89,7 +88,7 @@ class User(TimestampMixin, table=True):
 class UserPhotoProp(SQLModel, table=True):
     __tablename__ = declared_attr(lambda cls: "user_photo_prop")
     id: UUID = Field(default_factory=uuid4, primary_key=True, index=True, nullable=False)
-    user_id: UUID | None = Field(default=None, foreign_key="user.id",
+    user_id: UUID = Field(foreign_key="user.id",
                                  unique=True, nullable=False)
     user: User | None = Relationship(
         sa_relationship=RelationshipProperty(
@@ -105,8 +104,7 @@ class UserPhotoProp(SQLModel, table=True):
 class UserSubscription(SQLModel, table=True):
     __tablename__ = declared_attr(lambda cls: "user_subscription")
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    user_id: UUID | None = Field(default=None, foreign_key="user.id",
-                                 unique=True)
+    user_id: UUID = Field(foreign_key="user.id", nullable=False, unique=True)
     user: User | None = Relationship(
         sa_relationship=RelationshipProperty(
             "User",
@@ -132,54 +130,54 @@ class Pet(TimestampMixin, table=True):
 class PetAttr(SQLModel, table=True):
     __tablename__ = declared_attr(lambda cls: "pet_attr")
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_id: UUID | None = Field(default=None, foreign_key="pet.id")
+    pet_id: UUID = Field(nullable=False, foreign_key="pet.id")
     breeds: list["PetAttrBreed"] = Relationship(back_populates="pet_attr")
     aggression_level: list["PetAttrAggressionLevel"] = Relationship(back_populates="pet_attr")
-    allergies: list["PetAttrAggressionLevel"] = Relationship(back_populates="pet_attr")
+    allergies: list["PetAttrAllergy"] = Relationship(back_populates="pet_attr")
     behaviors: list["PetAttrBehavior"] = Relationship(back_populates="pet_attr")
     interactions: list["PetAttrInteraction"] = Relationship(back_populates="pet_attr")
     personalities: list["PetAttrPersonality"] = Relationship(back_populates="pet_attr")
-    reactivity: list["PetReactivity"] | None = Relationship(back_populates="pet_attr")
+    reactivity: list["PetAttrReactivity"] = Relationship(back_populates="pet_attr")
     sterilised: bool | None = None
 
 class PetAttrBreed(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id")
+    pet_attr_id: UUID = Field(foreign_key="pet_attr.id", nullable=False)
     pet_attr: Optional["PetAttr"] = Relationship(back_populates="breeds")
     breed: PetBreed
 
 class PetAttrAggressionLevel(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id")
+    pet_attr_id: UUID = Field(foreign_key="pet_attr.id", nullable=False)
     pet_attr: Optional["PetAttr"] = Relationship(back_populates="aggression_level")
     aggression_level: PetAggressionLevel
 
 class PetAttrAllergy(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id")
+    pet_attr_id: UUID = Field(foreign_key="pet_attr.id", nullable=False)
     pet_attr: Optional["PetAttr"] = Relationship(back_populates="allergies")
     allergy: PetAllergy
 
 class PetAttrBehavior(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id")
+    pet_attr_id: UUID = Field(foreign_key="pet_attr.id", nullable=False)
     pet_attr: Optional["PetAttr"] = Relationship(back_populates="behaviors")
     behavior: PetBehavior
 
 class PetAttrInteraction(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id")
+    pet_attr_id: UUID = Field(foreign_key="pet_attr.id", nullable=False)
     pet_attr: Optional["PetAttr"] = Relationship(back_populates="interactions")
     interaction: PetInteraction
 
 class PetAttrPersonality(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id")
+    pet_attr_id: UUID = Field(foreign_key="pet_attr.id", nullable=False)
     pet_attr: Optional["PetAttr"] = Relationship(back_populates="personalities")
     personality: PetPersonality
 
 class PetAttrReactivity(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id")
+    pet_attr_id: UUID = Field(foreign_key="pet_attr.id", nullable=False)
     pet_attr: Optional["PetAttr"] = Relationship(back_populates="reactivity")
     reactivity: PetReactivity
