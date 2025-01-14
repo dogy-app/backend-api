@@ -1,38 +1,14 @@
 from datetime import date
 from decimal import Decimal
-from enum import Enum
 from typing import Optional
 from uuid import UUID, uuid4
 
 from sqlmodel import ARRAY, Column, Field, Relationship, SQLModel, String
 
+from .datatypes import *
 from .mixins.geolocation import GeolocationMixin
 from .mixins.timestamp import TimestampMixin
 
-
-# Enums
-class GenderEnum(str, Enum):
-    MALE = "male"
-    FEMALE = "female" 
-
-class AgeGroupEnum(str, Enum):
-    UNDER_18 = "under 18"
-    AGE_18_24 = "18-24"
-    AGE_25_34 = "25-34"
-    AGE_35_44 = "35-44"
-    AGE_45_54 = "45-54"
-    AGE_55_64 = "55-64"
-    AGE_65_PLUS = "65+"
-
-class RoleEnum(str, Enum):
-    DOG_OWNER = "dog owner" 
-    DOG_SITTER = "dog sitter"
-    BOTH = "both"
-
-class PetSizeEnum(str, Enum):
-    SMALL = "small"
-    MEDIUM = "medium"
-    LARGE = "large"
 
 # Models
 class PlaceBase(TimestampMixin, GeolocationMixin):
@@ -47,7 +23,7 @@ class Place(PlaceBase, table=True):
     website_url: str | None = None
     location_metadata_id: UUID | None = Field(default=None, foreign_key="location_metadata.id")
     location_metadata: Optional["LocationMetadata"] = Relationship(back_populates="place")
-    
+
 class LocationMetadata(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     city: str | None = None
