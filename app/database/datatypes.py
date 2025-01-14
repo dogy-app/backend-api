@@ -1,3 +1,11 @@
+"""
+Database Types for PostgreSQL.
+Schema version: 0.1.0
+
+Contains all of the custom types (in the form of enums) that are used in the
+schema. This will be automatically generated with CREATE TYPE command by
+SQLModel.
+"""
 from enum import Enum
 
 
