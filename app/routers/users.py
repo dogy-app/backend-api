@@ -1,28 +1,36 @@
+from dataclasses import dataclass
+from enum import Enum
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
-from sqlmodel import Session
+from fastapi import APIRouter, Depends, status
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.database.core import get_session
 from app.database.models import User
-from app.users.crud import UserRepository
+from app.users.crud import UserCreate, UserRepository
 
-router = APIRouter(prefix="/user")
+router = APIRouter()
+user_repo = UserRepository()
 
-@router.post("/", response_model=User)
-def create_user(user: User, db: Session = Depends(get_session)):  
-    user_repo = UserRepository(session=db)
-    user_created = user_repo.create_user(user)
+class Status(str, Enum):
+    success = "success"
+    failure = "failure"
+
+@dataclass
+class UserDeletedResponse:
+    status: Status
+
+@router.post("/", response_model=User, status_code=status.HTTP_201_CREATED)
+async def create_user(user: UserCreate, db: AsyncSession = Depends(get_session)):
+    user_created = await user_repo.create_user(user, session=db)
     return user_created
 
-@router.get("/{user_uuid}", response_model=User)
-def get_user_by_uuid(user_uuid: str, db: Session = Depends(get_session)):
-    user_repo = UserRepository(session=db)
-    user = user_repo.get_user_by_id(user_uuid)
+@router.get("/{user_uuid}", response_model=User, summary="Get User By ID")
+async def get_user_by_id(user_uuid: UUID, db: AsyncSession = Depends(get_session)):
+    user = await user_repo.get_user_by_id(user_uuid, session=db)
     return user
 
-@router.delete("/")
-def delete_user(user_uuid: UUID, db: Session = Depends(get_session)):
-    user_repo = UserRepository(session=db)
-    user_repo.delete_user(user_uuid)
-    return { "status": "success" }
+@router.delete("/{user_uuid}", response_model=UserDeletedResponse)
+async def delete_user(user_uuid: UUID, db: AsyncSession = Depends(get_session)):
+    await user_repo.delete_user(user_uuid, session=db)
+    return UserDeletedResponse(status=Status.success)

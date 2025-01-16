@@ -7,10 +7,10 @@ from app.database.core import get_session
 from app.database.models import Pet
 from app.pets.crud import PetRepository
 
-router = APIRouter(prefix="/pets")
+router = APIRouter()
 
-@router.post("/") 
-def create_pet(pet: Pet, db: Session = Depends(get_session)):   
+@router.post("/")
+def create_pet(pet: Pet, db: Session = Depends(get_session)):
     pet_repo = PetRepository(session=db)
     pet_created = pet_repo.create_pet(pet)
     return pet_created
