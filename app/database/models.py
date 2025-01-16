@@ -61,19 +61,18 @@ class UserPetLink(SQLModel, table=True):
     purpose: str | None = None
     role: UserRole | None = None
 
-
 class User(TimestampMixin, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str | None = None
     email: str | None = None
     gender: Gender | None = None
     age_group: AgeGroup | None = None
-    user_photo: Optional["UserPhotoProp"] = Relationship(
+    photo: Optional["UserPhotoProp"] = Relationship(
         sa_relationship_kwargs={"uselist": False},
         back_populates="user",
         cascade_delete=True,
     )
-    user_subscription: Optional["UserSubscription"] = Relationship(
+    subscription: Optional["UserSubscription"] = Relationship(
         sa_relationship_kwargs={"uselist": False},
         back_populates="user",
         cascade_delete=True,
@@ -89,7 +88,7 @@ class UserPhotoProp(SQLModel, table=True):
                                  unique=True, ondelete="CASCADE")
     user: User | None = Relationship(
         sa_relationship_kwargs={"uselist": False},
-        back_populates="user_photo",
+        back_populates="photo",
     )
     photo_url: str | None = None
     no_photo_color: str | None = Field(default=None, max_length=7)
@@ -102,7 +101,7 @@ class UserSubscription(SQLModel, table=True):
                                  unique=True, ondelete="CASCADE")
     user: User | None = Relationship(
         sa_relationship_kwargs={"uselist": False},
-        back_populates="user_subscription",
+        back_populates="subscription",
     )
     trial_start_date: date | None = None
     subscription_type: SubscriptionType | None = None
