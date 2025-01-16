@@ -29,6 +29,7 @@ class AzureSettings(BaseSettings):
 
 
 class Settings(AzureSettings):
+    api_version: str = "v1"
     pass
 
 @lru_cache
