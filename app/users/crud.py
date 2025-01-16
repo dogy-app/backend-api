@@ -1,34 +1,46 @@
 from uuid import UUID
 
-from sqlmodel import Session, select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.database.models import User
+from app.common.pydantic import filter_fields
+from app.database.models import User, UserPhotoProp, UserSubscription
+
+from .schemas import UserCreate
 
 
 class UserRepository:
-    def __init__(self, session: Session) -> None:
-        self.session = session
-    
-    def create_user(self, user: User) -> User:
-        self.session.add(user)
-        self.session.commit()
-        self.session.refresh(user)
+    async def create_user(self, user_req: UserCreate, session: AsyncSession) -> User:
+        # User
+        user_data = filter_fields(User, user_req)
+        user = User.model_validate(user_data)
+
+        # UserSubscription
+        user_subscription_data = filter_fields(UserSubscription, user_req)
+        user_subscription = UserSubscription.model_validate(user_subscription_data)
+
+        # UserPhotoProp
+        user_photo_prop_data = filter_fields(UserPhotoProp, user_req)
+        user_photo_prop = UserPhotoProp.model_validate(user_photo_prop_data)
+
+        # Relationships
+        user.user_subscription = user_subscription
+        user.user_photo = user_photo_prop
+
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
         return user
 
-    def get_user_by_id(self, user_id: str) -> User:
-        if not user_id:
-            raise Exception("User ID is required")
-        query = select(User).where(User.user_id == user_id)
-        results = self.session.exec(query)
-        if not results:
-            raise Exception("User not found")
-        user = results.first()
-        if not user:
+    async def get_user_by_id(self, user_id: UUID, session: AsyncSession) -> User:
+        user = await session.get(User, user_id)
+        if user is None:
             raise Exception("User not found")
         return user
 
-    def delete_user(self, user_id: UUID) -> None:
-        user = self.session.get(User, user_id)
-        self.session.delete(user)
-        self.session.commit()
+    async def delete_user(self, user_id: UUID, session: AsyncSession) -> None:
+        user = await session.get(User, user_id)
+        if user is None:
+            raise Exception("User not found")
+        await session.delete(user)
+        await session.commit()
         return None
