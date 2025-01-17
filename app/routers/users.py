@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Path
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.database.core import get_session
-from app.users.crud import UserCreate, UserRepository
+from app.users.crud import UserCreate, UserService
 from app.users.responses import (
     Status,
     UserDeletedResponse,
@@ -14,7 +14,7 @@ from app.users.responses import (
 )
 
 router = APIRouter()
-user_repo = UserRepository()
+user_repo = UserService()
 
 @router.post("/", responses=user_post_responses) # type: ignore
 async def create_user(user: UserCreate, db: AsyncSession = Depends(get_session)):
