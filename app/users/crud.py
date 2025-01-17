@@ -11,7 +11,7 @@ from app.errors import UserAlreadyExists, UserNotFound
 from .schemas import UserCreate, UserPhotoRead, UserResponse, UserSubscriptionRead
 
 
-class UserRepository:
+class UserService:
     async def create_user(self, session: AsyncSession, user_req: UserCreate) -> UserResponse:
         user = User(**filter_fields(User, user_req))
         user.photo = UserPhotoProp(**filter_fields(UserPhotoRead, user_req.photo))
@@ -54,7 +54,7 @@ class UserRepository:
             raise UserNotFound(f"User '{user_id}' not found")
 
         response = UserResponse(
-            **user.model_dump(exclude={"created_at", "updated_at", "deleted_at"}),
+            **user.model_dump(exclude={"created_at", "updated_at"}),
             subscription=UserSubscriptionRead(
                 **user_subscription.model_dump(exclude={"user_id"})
             ),

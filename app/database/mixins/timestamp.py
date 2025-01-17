@@ -10,7 +10,7 @@ At this point all classes inheriting from YourModel will have the usual fields a
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlmodel import DateTime, Field, SQLModel
+from sqlmodel import Field, SQLModel
 
 
 def custom_encoder(obj):
@@ -35,9 +35,4 @@ class TimestampMixin(SQLModel):
         sa_column_kwargs={
             "onupdate": lambda: datetime.now(timezone.utc),
         },
-    )
-    deleted_at: Optional[datetime] = Field(
-        default=None,
-        sa_type=DateTime(),
-        description="Database timestamp when the record was deleted.",
     )
