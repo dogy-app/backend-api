@@ -1,120 +1,199 @@
+"""
+Database Schema for PostgreSQL.
+Schema version: 0.1.0
+"""
+
+import re
 from datetime import date
 from decimal import Decimal
-from enum import Enum
 from typing import Optional
 from uuid import UUID, uuid4
 
+from sqlalchemy.orm import declared_attr
 from sqlmodel import ARRAY, Column, Field, Relationship, SQLModel, String
 
+from .datatypes import *
 from .mixins.geolocation import GeolocationMixin
 from .mixins.timestamp import TimestampMixin
 
 
-# Enums
-class GenderEnum(str, Enum):
-    MALE = "male"
-    FEMALE = "female" 
-
-class AgeGroupEnum(str, Enum):
-    UNDER_18 = "under 18"
-    AGE_18_24 = "18-24"
-    AGE_25_34 = "25-34"
-    AGE_35_44 = "35-44"
-    AGE_45_54 = "45-54"
-    AGE_55_64 = "55-64"
-    AGE_65_PLUS = "65+"
-
-class RoleEnum(str, Enum):
-    DOG_OWNER = "dog owner" 
-    DOG_SITTER = "dog sitter"
-    BOTH = "both"
-
-class PetSizeEnum(str, Enum):
-    SMALL = "small"
-    MEDIUM = "medium"
-    LARGE = "large"
+# Convert Capital Case to snake_case
+def to_snake_case(name: str) -> str:
+    return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
 
 # Models
 class PlaceBase(TimestampMixin, GeolocationMixin):
-    name: str
-    description: str | None = None
-    type: str
+    pass
 
 class Place(PlaceBase, table=True):
+    """place table is already used by PostGIS extension, thus we need to use a
+    different name."""
+    __tablename__ = "places" # type: ignore
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    gmaps_id: str | None = None
+    gmaps_id: str | None = Field(default=None, max_length=27)
+    name: str
+    description: str | None = None
+    type: PlaceType
     images: list[str] = Field(sa_column=Column(ARRAY(String), nullable=True))
     website_url: str | None = None
-    location_metadata_id: UUID | None = Field(default=None, foreign_key="location_metadata.id")
-    location_metadata: Optional["LocationMetadata"] = Relationship(back_populates="place")
-    
-class LocationMetadata(SQLModel, table=True):
+    place_metadata: Optional["PlaceMetadata"] = Relationship( # One-to-one relationship
+        sa_relationship_kwargs={"uselist": False},
+        back_populates="place",
+        cascade_delete=True,
+    )
+
+class PlaceMetadata(SQLModel, table=True):
+    __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     city: str | None = None
     country: str | None = None
-    geohash: str | None = Field(max_length=12)
-    address: str | None = None
-    place: Place | None = Relationship( # One-to-one relationship
-        sa_relationship_kwargs={"uselist": False},
-        back_populates="location_metadata"
-    )
+    full_address: str | None = None
+    place_id: UUID | None = Field(default=None, foreign_key="places.id",
+                                  unique=True, ondelete="CASCADE")
+    place: Place | None = Relationship(back_populates="place_metadata")
 
 
 class UserPetLink(SQLModel, table=True):
-    user_id: UUID | None = Field(default=None, foreign_key="user.id", primary_key=True)
-    pet_id: UUID | None = Field(default=None, foreign_key="pet.id", primary_key=True)
-
+    user_id: UUID | None = Field(default=None, foreign_key="user.id",
+                                 primary_key=True, ondelete="CASCADE")
+    pet_id: UUID | None = Field(default=None, foreign_key="pet.id",
+                                primary_key=True, ondelete="CASCADE")
+    purpose: str | None = None
+    role: UserRole | None = None
 
 class User(TimestampMixin, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    user_id: str = Field(unique=True)
     name: str | None = None
-    email: str | None = None
-    gender: GenderEnum | None = None
-    age_group: AgeGroupEnum | None = None
-    user_photo_id: UUID | None = Field(default=None, foreign_key="userphotoprop.id")
-    user_photo: Optional["UserPhotoProp"] = Relationship(back_populates="user")
-    has_onboarded: bool = Field(default=False)
-    purpose: str | None = None
-    role: RoleEnum | None = None
+    firebase_uid: str | None = Field(default=None, unique=True, min_length=28,
+                                     max_length=28, index=True)
+    email: str | None = Field(default=None, unique=True)
     timezone: str | None = None
+    gender: Gender | None = None
+    age_group: AgeGroup | None = None
+    has_onboarded: bool = Field(default=False)
+    photo: Optional["UserPhotoProp"] = Relationship(
+        sa_relationship_kwargs={"uselist": False},
+        back_populates="user",
+        cascade_delete=True,
+    )
+    subscription: Optional["UserSubscription"] = Relationship(
+        sa_relationship_kwargs={"uselist": False},
+        back_populates="user",
+        cascade_delete=True,
+    )
     pets: list["Pet"] = Relationship(back_populates="owners", link_model=UserPetLink)
 
 class UserPhotoProp(SQLModel, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
+    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True, nullable=False)
+    user_id: UUID | None = Field(default=None, foreign_key="user.id",
+                                 unique=True, ondelete="CASCADE")
     user: User | None = Relationship(
         sa_relationship_kwargs={"uselist": False},
-        back_populates="user_photo"
+        back_populates="photo",
     )
     photo_url: str | None = None
     no_photo_color: str | None = Field(default=None, max_length=7)
     no_photo_icon_str: str | None = None
 
+class UserSubscription(SQLModel, table=True):
+    __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID | None = Field(default=None, foreign_key="user.id",
+                                 unique=True, ondelete="CASCADE")
+    user: User | None = Relationship(
+        sa_relationship_kwargs={"uselist": False},
+        back_populates="subscription",
+    )
+    trial_start_date: date | None = None
+    subscription_type: SubscriptionType | None = None
+    is_registered: bool = Field(default=False)
+    is_trial_mode: bool = Field(default=False)
 
 class Pet(TimestampMixin, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_id: str = Field(unique=True)
     name: str | None = None
     birthday: date | None
     photo_url: str | None = None
-    sex: GenderEnum | None = None
+    gender: Gender | None = None
     owners: list["User"] = Relationship(back_populates="pets", link_model=UserPetLink)
-    photo_url: str | None = None
-    size: PetSizeEnum | None = None
+    size: PetSize | None = None
     weight: Decimal = Field(default=0, max_digits=5, decimal_places=2)
+    attributes: Optional["PetAttr"] = Relationship(
+        sa_relationship_kwargs={"uselist": False},
+        back_populates="pet",
+        cascade_delete=True,
+    )
 
 class PetAttr(SQLModel, table=True):
+    __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    breed: str | None = None
-    agression_level: list[str] | None = Field(sa_column=Column(ARRAY(String), nullable=True))
-    behaviour: list[str] | None = Field(sa_column=Column(ARRAY(String), nullable=True))
-    interaction: list[str] | None = Field(sa_column=Column(ARRAY(String), nullable=True))
-    personalities: list[str] | None = Field(sa_column=Column(ARRAY(String), nullable=True))
-    reactivity: list[str] | None = Field(sa_column=Column(ARRAY(String), nullable=True))
+    pet: Optional["Pet"] = Relationship(
+        sa_relationship_kwargs={"uselist": False},
+        back_populates="attributes"
+    )
+    pet_id: UUID | None = Field(default=None, foreign_key="pet.id", ondelete="CASCADE")
+    breeds: list["PetAttrBreed"] = Relationship(back_populates="pet_attr",
+                                                cascade_delete=True)
+    aggression_level: list["PetAttrAggressionLevel"] = Relationship(
+            back_populates="pet_attr", cascade_delete=True)
+    allergies: list["PetAttrAllergy"] = Relationship(back_populates="pet_attr",
+                                                     cascade_delete=True)
+    behaviors: list["PetAttrBehavior"] = Relationship(back_populates="pet_attr",
+                                                      cascade_delete=True)
+    interactions: list["PetAttrInteraction"] = Relationship(
+            back_populates="pet_attr", cascade_delete=True)
+    personalities: list["PetAttrPersonality"] = Relationship(
+            back_populates="pet_attr", cascade_delete=True)
+    reactivity: list["PetAttrReactivity"] = Relationship(
+            back_populates="pet_attr", cascade_delete=True)
     sterilised: bool | None = None
 
+class PetAttrBreed(SQLModel, table=True):
+    __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id", ondelete="CASCADE")
+    pet_attr: Optional["PetAttr"] = Relationship(back_populates="breeds")
+    breed: PetBreed
 
-def validate_schema_place(example):
-    example_instance = Place.model_validate(example)
-    print(example_instance.model_dump_json(indent=4))
-    print(example_instance.model_json_schema())
+class PetAttrAggressionLevel(SQLModel, table=True):
+    __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id", ondelete="CASCADE")
+    pet_attr: Optional["PetAttr"] = Relationship(back_populates="aggression_level")
+    aggression_level: PetAggressionLevel
+
+class PetAttrAllergy(SQLModel, table=True):
+    __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id", ondelete="CASCADE")
+    pet_attr: Optional["PetAttr"] = Relationship(back_populates="allergies")
+    allergy: PetAllergy
+
+class PetAttrBehavior(SQLModel, table=True):
+    __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id", ondelete="CASCADE")
+    pet_attr: Optional["PetAttr"] = Relationship(back_populates="behaviors")
+    behavior: PetBehavior
+
+class PetAttrInteraction(SQLModel, table=True):
+    __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id", ondelete="CASCADE")
+    pet_attr: Optional["PetAttr"] = Relationship(back_populates="interactions")
+    interaction: PetInteraction
+
+class PetAttrPersonality(SQLModel, table=True):
+    __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id", ondelete="CASCADE")
+    pet_attr: Optional["PetAttr"] = Relationship(back_populates="personalities")
+    personality: PetPersonality
+
+class PetAttrReactivity(SQLModel, table=True):
+    __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id", ondelete="CASCADE")
+    pet_attr: Optional["PetAttr"] = Relationship(back_populates="reactivity")
+    reactivity: PetReactivity

@@ -12,10 +12,11 @@ dependencies = [
     "geoalchemy2>=0.16.0",
     "geojson>=3.1.0",
     "googlemaps>=4.10.0",
-    "psycopg2-binary>=2.9.10",
+    "psycopg[binary]>=3.2.3",
     "pydantic-settings>=2.7.0",
     "pygeohash>=1.2.0",
     "pytest-cov>=6.0.0",
+    "scalar-fastapi>=1.0.3",
     "shapely>=2.0.6",
     "sqlmodel>=0.0.22",
 ]
