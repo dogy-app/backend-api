@@ -64,9 +64,13 @@ class UserPetLink(SQLModel, table=True):
 class User(TimestampMixin, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str | None = None
-    email: str | None = None
+    firebase_uid: str | None = Field(default=None, unique=True, min_length=28,
+                                     max_length=28, index=True)
+    email: str | None = Field(default=None, unique=True)
+    timezone: str | None = None
     gender: Gender | None = None
     age_group: AgeGroup | None = None
+    has_onboarded: bool = Field(default=False)
     photo: Optional["UserPhotoProp"] = Relationship(
         sa_relationship_kwargs={"uselist": False},
         back_populates="user",
@@ -77,8 +81,6 @@ class User(TimestampMixin, table=True):
         back_populates="user",
         cascade_delete=True,
     )
-    has_onboarded: bool = Field(default=False)
-    timezone: str | None = None
     pets: list["Pet"] = Relationship(back_populates="owners", link_model=UserPetLink)
 
 class UserPhotoProp(SQLModel, table=True):

@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -26,7 +27,7 @@ class UserSubscriptionRead(BaseModel):
 
 class UserPhotoRead(BaseModel):
     photo_url: str | None = Field(
-        default=None,
+        default = None,
         description="URL of the user's profile photo."
     )
     no_photo_color: str | None = Field(
@@ -48,6 +49,8 @@ class UserPhotoRead(BaseModel):
 
 class UserResponse(BaseModel):
     id: UUID
+    firebase_uid: str = Field(min_length=28, max_length=28,
+                              description="Firebase UID of the user.")
     name: str = Field(description="Full name of the user.")
     email: str = Field(description="Email address associated with Firebase.")
     gender: Gender
@@ -61,4 +64,4 @@ class UserResponse(BaseModel):
     subscription: UserSubscriptionRead
 
 class UserCreate(UserResponse):
-    id: SkipJsonSchema[int] = Field(default=1, exclude=True) # type: ignore
+    id: SkipJsonSchema[Union[UUID,None]] = Field(default=None, exclude=True) # type: ignore
