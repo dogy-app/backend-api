@@ -1,8 +1,9 @@
-from typing import Any, Callable
+from typing import Callable
 
 from fastapi import FastAPI, status
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 
 class DogyException(Exception):
@@ -47,15 +48,20 @@ class InputEmptyError(DogyException):
     """Raised when an input is empty."""
     pass
 
+class InitialDetail(BaseModel):
+    """Initial detail for error responses."""
+    message: str
+    error_code: str
+
 def create_exception_handler(
-    status_code: int, initial_detail: Any
+    status_code: int, initial_detail: InitialDetail
 ) -> Callable[[Request, Exception], JSONResponse]:
 
     async def exception_handler(request: Request, exc: DogyException):
         if exc.message:
-            initial_detail["message"] = exc.message
+            initial_detail.message = exc.message
 
-        return JSONResponse(content=initial_detail, status_code=status_code)
+        return JSONResponse(content=initial_detail.model_dump(), status_code=status_code)
 
     return exception_handler # type: ignore
 
@@ -64,39 +70,44 @@ def register_all_errors(app: FastAPI) -> None:
         UserNotFound,
         create_exception_handler(
             status_code=status.HTTP_404_NOT_FOUND,
-            initial_detail={
-                "message": "User not found.",
-                "error_code": "user_not_found"
-            })
+            initial_detail=InitialDetail(
+                message = "User not found.",
+                error_code = "user_not_found"
+            )
+        )
     )
 
     app.add_exception_handler(
         UserAlreadyExists,
         create_exception_handler(
             status_code=status.HTTP_409_CONFLICT,
-            initial_detail={
-                "message": "User already exists.",
-                "error_code": "user_exists"
-            })
+            initial_detail=InitialDetail(
+                message = "User already exists.",
+                error_code = "user_exists"
+            )
+        )
     )
 
     app.add_exception_handler(
         PlaceNotFound,
         create_exception_handler(
-            status_code=status.HTTP_409_CONFLICT,
-            initial_detail={
-                "message": "User already exists.",
-                "error_code": "user_exists"
-            })
+            status_code=status.HTTP_404_NOT_FOUND,
+            initial_detail=InitialDetail(
+                message = "Place not found.",
+                error_code = "place_not_found"
+            )
+        )
     )
 
     app.add_exception_handler(
         InputEmptyError,
         create_exception_handler(
             status_code=status.HTTP_400_BAD_REQUEST,
-            initial_detail={
-                "message": "Input parameter cannot be empty.",
-                "error_code": "input_empty"
-            })
+            initial_detail=InitialDetail(
+                message = "Input parameter cannot be empty.",
+                error_code = "input_empty"
+
+            )
+        )
     )
 
