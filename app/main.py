@@ -6,6 +6,7 @@ from starlette.responses import JSONResponse
 
 from .config import get_settings
 from .database.core import async_engine, init_db
+from .errors import register_all_errors
 from .routers.images import router as images_router
 from .routers.pets import router as pets_router
 from .routers.users import router as users_router
@@ -29,6 +30,8 @@ app = FastAPI(
     root_path=version_prefix,
     version="0.1.0"
 )
+
+register_all_errors(app)
 
 app.openapi_tags = [
     {"name": "Entry", "description": "API Entry"},
