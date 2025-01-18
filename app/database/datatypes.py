@@ -14,15 +14,6 @@ class Gender(str, Enum):
     MALE = "male"
     FEMALE = "female"
 
-class AgeGroup(str, Enum):
-    UNDER_18 = "under 18"
-    AGE_18_24 = "18-24"
-    AGE_25_34 = "25-34"
-    AGE_35_44 = "35-44"
-    AGE_45_54 = "45-54"
-    AGE_55_64 = "55-64"
-    AGE_65_PLUS = "65+"
-
 class UserRole(str, Enum):
     DOG_OWNER = "dog owner"
     DOG_SITTER = "dog sitter"
