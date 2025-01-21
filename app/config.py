@@ -30,6 +30,7 @@ class AzureSettings(BaseSettings):
 
 class Settings(AzureSettings):
     api_version: str = "v1"
+    clerk_jwks_url: str
     pass
 
 @lru_cache
