@@ -1,15 +1,14 @@
 from datetime import date
 from enum import Enum
-from uuid import UUID
 
 from fastapi import status
 from pydantic import BaseModel
 
 from app.common.pydantic import ResponseTemplate
-from app.database.datatypes import AgeGroup, Gender, SubscriptionType
+from app.database.datatypes import Gender, SubscriptionType
 from app.errors import InitialDetail
 
-from .schemas import UserPhotoRead, UserResponse, UserSubscriptionRead
+from .schemas import UserResponse, UserSubscriptionRead
 
 """Response Models"""
 class UserAlreadyExistsResponse(InitialDetail):
@@ -38,19 +37,11 @@ user_not_found_response = UserNotFoundResponse(
 )
 
 user_created_response = UserResponse(
-    id=UUID("94162e9f-30f8-49c6-8a0d-abd4974096ee"),
-    firebase_uid="AC3snUb69laJEbaa2e3Vcmd505Z2",
+    external_id="user_2ruHSXCzfIRreR2tpttVQBl512a",
     name="Dummy User",
-    email="dummyemail@dogy.app",
     gender=Gender.MALE,
-    age_group=AgeGroup.UNDER_18,
     has_onboarded=True,
-    timezone="PHT",
-    photo=UserPhotoRead(
-        photo_url = None,
-        no_photo_color = "#000000",
-        no_photo_icon_str = "PG"
-    ),
+    timezone="Asia/Manila",
     subscription=UserSubscriptionRead(
         trial_start_date = date.today(),
         subscription_type = SubscriptionType.ACTIVE,
@@ -84,7 +75,6 @@ user_post_responses = {
 
 """
 GET /users/{user_id}
-GET /users/internal/{user_id}
 """
 user_get_responses = {
     status.HTTP_200_OK: {**user_post_responses[status.HTTP_200_OK]}, #type: ignore

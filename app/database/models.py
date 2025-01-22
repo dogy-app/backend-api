@@ -63,36 +63,17 @@ class UserPetLink(SQLModel, table=True):
 class User(TimestampMixin, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str | None = None
-    firebase_uid: str | None = Field(default=None, unique=True, min_length=28,
-                                     max_length=28, index=True)
-    email: str | None = Field(default=None, unique=True)
+    external_id: str | None = Field(default=None, unique=True, min_length=32,
+                                     max_length=32, index=True)
     timezone: str | None = None
     gender: Gender | None = None
     has_onboarded: bool = Field(default=False)
-    photo: Optional["UserPhotoProp"] = Relationship(
-        sa_relationship_kwargs={"uselist": False},
-        back_populates="user",
-        cascade_delete=True,
-    )
     subscription: Optional["UserSubscription"] = Relationship(
         sa_relationship_kwargs={"uselist": False},
         back_populates="user",
         cascade_delete=True,
     )
     pets: list["Pet"] = Relationship(back_populates="owners", link_model=UserPetLink)
-
-class UserPhotoProp(SQLModel, table=True):
-    __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
-    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True, nullable=False)
-    user_id: UUID | None = Field(default=None, foreign_key="user.id",
-                                 unique=True, ondelete="CASCADE")
-    user: User | None = Relationship(
-        sa_relationship_kwargs={"uselist": False},
-        back_populates="photo",
-    )
-    photo_url: str | None = None
-    no_photo_color: str | None = Field(default=None, max_length=7)
-    no_photo_icon_str: str | None = None
 
 class UserSubscription(SQLModel, table=True):
     __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
