@@ -21,6 +21,12 @@ class UserNotFound(DogyException):
     """Raised when a user is not found."""
     pass
 
+class InternalUserNotFound(DogyException):
+    """Raised when a user is not found internally from the database."""
+    def __init__(self, message: str = "User not found."):
+        super().__init__(message)
+    pass
+
 class UserAlreadyExists(DogyException):
     """Raised when a user already exists."""
     pass
@@ -57,8 +63,16 @@ class NoBearerToken(DogyException):
     """Raised when no bearer token is given."""
     pass
 
+class InvalidUserID(DogyException):
+    """Raised when invalid user ID is given (Clerk ID)."""
+    pass
+
 class InvalidCredentials(DogyException):
     """Raised when invalid credentials are given (bearer token)."""
+    pass
+
+class NotAuthorized(DogyException):
+    """Raised when a user is not authorized to perform an action."""
     pass
 
 def create_exception_handler(
@@ -66,6 +80,8 @@ def create_exception_handler(
 ) -> Callable[[Request, Exception], JSONResponse]:
 
     async def exception_handler(request: Request, exc: DogyException):
+        if exc.message:
+            initial_detail.message = exc.message
         return JSONResponse(
             content=initial_detail.model_dump(),
             status_code=status_code,
@@ -121,6 +137,18 @@ def register_all_errors(app: FastAPI) -> None:
     )
 
     app.add_exception_handler(
+        InvalidUserID,
+        create_exception_handler(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            initial_detail=InitialDetail(
+                message = "User ID is not a valid clerk ID.",
+                error_code = "input_empty"
+
+            )
+        )
+    )
+
+    app.add_exception_handler(
         NoBearerToken,
         create_exception_handler(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -141,6 +169,17 @@ def register_all_errors(app: FastAPI) -> None:
                 error_code = "invalid_credentials"
             ),
             headers={"WWW-Authenticate": "Bearer"}
+        )
+    )
+
+    app.add_exception_handler(
+        NotAuthorized,
+        create_exception_handler(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            initial_detail=InitialDetail(
+                message = "You are not authorized to perform this action.",
+                error_code = "not_authorized"
+            ),
         )
     )
 
