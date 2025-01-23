@@ -43,6 +43,12 @@ class PetNotFound(DogyException):
     """Raised when a pet is not found."""
     pass
 
+class InternalPetNotFound(DogyException):
+    """Raised when a pet is not found internally from the database."""
+    def __init__(self, message: str = "Pet not found."):
+        super().__init__(message)
+    pass
+
 class PetAlreadyExists(DogyException):
     """Raised when a pet already exists."""
     pass

@@ -32,6 +32,19 @@ class UserService:
             raise UserNotFound(f"User '{external_id}' does not exist.")
         return user_id
 
+    async def get_user_id_from_internal_id(
+        self,
+        session: AsyncSession,
+        internal_id: UUID
+    ):
+        try:
+            query = select(User.external_id).where(User.id == internal_id)
+            result = await session.exec(query)
+            user_id = result.one()
+        except NoResultFound:
+            raise InternalUserNotFound(f"User '{internal_id}' does not exist.")
+        return user_id
+
     async def create_user(self, session: AsyncSession, user_req: UserCreate) -> UserResponse:
         user = User(**filter_fields(User, user_req))
         user.subscription = UserSubscription(
