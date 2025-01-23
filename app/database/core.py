@@ -29,7 +29,7 @@ class NotFoundError(Exception):
 #     )
 #     return str(url)
 def get_postgresql_connection_string() -> str:
-    return "postgresql+psycopg://postgres:password@localhost:5432/postgres"
+    return "postgresql+psycopg://postgres:password@localhost:5432/dogyprod"
 
 DATABASE_URL: str = get_postgresql_connection_string()
 async_engine: AsyncEngine = create_async_engine(DATABASE_URL, echo=True)
