@@ -3,7 +3,6 @@ Database Schema for PostgreSQL.
 Schema version: 0.1.0
 """
 
-import re
 from datetime import date
 from decimal import Decimal
 from typing import Optional
@@ -15,11 +14,8 @@ from sqlmodel import ARRAY, Column, Field, Relationship, SQLModel, String
 from .datatypes import *
 from .mixins.geolocation import GeolocationMixin
 from .mixins.timestamp import TimestampMixin
+from .utils import to_snake_case
 
-
-# Convert Capital Case to snake_case
-def to_snake_case(name: str) -> str:
-    return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
 
 # Models
 class PlaceBase(TimestampMixin, GeolocationMixin):
@@ -58,43 +54,24 @@ class UserPetLink(SQLModel, table=True):
                                  primary_key=True, ondelete="CASCADE")
     pet_id: UUID | None = Field(default=None, foreign_key="pet.id",
                                 primary_key=True, ondelete="CASCADE")
-    purpose: str | None = None
-    role: UserRole | None = None
+    role: UserRole = UserRole.DOG_OWNER
+    user: "User" = Relationship(back_populates="pet_links")
+    pet: "Pet" = Relationship(back_populates="user_links")
 
 class User(TimestampMixin, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str | None = None
-    firebase_uid: str | None = Field(default=None, unique=True, min_length=28,
-                                     max_length=28, index=True)
-    email: str | None = Field(default=None, unique=True)
+    external_id: str | None = Field(default=None, unique=True, min_length=32,
+                                     max_length=32, index=True)
     timezone: str | None = None
     gender: Gender | None = None
-    age_group: AgeGroup | None = None
     has_onboarded: bool = Field(default=False)
-    photo: Optional["UserPhotoProp"] = Relationship(
-        sa_relationship_kwargs={"uselist": False},
-        back_populates="user",
-        cascade_delete=True,
-    )
     subscription: Optional["UserSubscription"] = Relationship(
         sa_relationship_kwargs={"uselist": False},
         back_populates="user",
         cascade_delete=True,
     )
-    pets: list["Pet"] = Relationship(back_populates="owners", link_model=UserPetLink)
-
-class UserPhotoProp(SQLModel, table=True):
-    __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
-    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True, nullable=False)
-    user_id: UUID | None = Field(default=None, foreign_key="user.id",
-                                 unique=True, ondelete="CASCADE")
-    user: User | None = Relationship(
-        sa_relationship_kwargs={"uselist": False},
-        back_populates="photo",
-    )
-    photo_url: str | None = None
-    no_photo_color: str | None = Field(default=None, max_length=7)
-    no_photo_icon_str: str | None = None
+    pet_links: list[UserPetLink] = Relationship(back_populates="user")
 
 class UserSubscription(SQLModel, table=True):
     __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
@@ -116,14 +93,14 @@ class Pet(TimestampMixin, table=True):
     birthday: date | None
     photo_url: str | None = None
     gender: Gender | None = None
-    owners: list["User"] = Relationship(back_populates="pets", link_model=UserPetLink)
     size: PetSize | None = None
-    weight: Decimal = Field(default=0, max_digits=5, decimal_places=2)
+    weight: Decimal = Field(default=Decimal(0.0), max_digits=5, decimal_places=2)
     attributes: Optional["PetAttr"] = Relationship(
         sa_relationship_kwargs={"uselist": False},
         back_populates="pet",
         cascade_delete=True,
     )
+    user_links: list[UserPetLink] = Relationship(back_populates="pet")
 
 class PetAttr(SQLModel, table=True):
     __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
@@ -135,7 +112,7 @@ class PetAttr(SQLModel, table=True):
     pet_id: UUID | None = Field(default=None, foreign_key="pet.id", ondelete="CASCADE")
     breeds: list["PetAttrBreed"] = Relationship(back_populates="pet_attr",
                                                 cascade_delete=True)
-    aggression_level: list["PetAttrAggressionLevel"] = Relationship(
+    aggression_levels: list["PetAttrAggressionLevel"] = Relationship(
             back_populates="pet_attr", cascade_delete=True)
     allergies: list["PetAttrAllergy"] = Relationship(back_populates="pet_attr",
                                                      cascade_delete=True)
@@ -145,55 +122,86 @@ class PetAttr(SQLModel, table=True):
             back_populates="pet_attr", cascade_delete=True)
     personalities: list["PetAttrPersonality"] = Relationship(
             back_populates="pet_attr", cascade_delete=True)
-    reactivity: list["PetAttrReactivity"] = Relationship(
+    reactivities: list["PetAttrReactivity"] = Relationship(
             back_populates="pet_attr", cascade_delete=True)
-    sterilised: bool | None = None
+    sterilized: bool = False
 
 class PetAttrBreed(SQLModel, table=True):
     __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id", ondelete="CASCADE")
+    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id",
+                                     ondelete="CASCADE", index=True)
     pet_attr: Optional["PetAttr"] = Relationship(back_populates="breeds")
     breed: PetBreed
 
 class PetAttrAggressionLevel(SQLModel, table=True):
     __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id", ondelete="CASCADE")
-    pet_attr: Optional["PetAttr"] = Relationship(back_populates="aggression_level")
+    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id",
+                                     ondelete="CASCADE", index=True)
+    pet_attr: Optional["PetAttr"] = Relationship(back_populates="aggression_levels")
     aggression_level: PetAggressionLevel
 
 class PetAttrAllergy(SQLModel, table=True):
     __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id", ondelete="CASCADE")
+    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id",
+                                     ondelete="CASCADE", index=True)
     pet_attr: Optional["PetAttr"] = Relationship(back_populates="allergies")
     allergy: PetAllergy
 
 class PetAttrBehavior(SQLModel, table=True):
     __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id", ondelete="CASCADE")
+    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id",
+                                     ondelete="CASCADE", index=True)
     pet_attr: Optional["PetAttr"] = Relationship(back_populates="behaviors")
     behavior: PetBehavior
 
 class PetAttrInteraction(SQLModel, table=True):
     __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id", ondelete="CASCADE")
+    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id",
+                                     ondelete="CASCADE", index=True)
     pet_attr: Optional["PetAttr"] = Relationship(back_populates="interactions")
     interaction: PetInteraction
 
 class PetAttrPersonality(SQLModel, table=True):
     __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id", ondelete="CASCADE")
+    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id",
+                                     ondelete="CASCADE", index=True)
     pet_attr: Optional["PetAttr"] = Relationship(back_populates="personalities")
     personality: PetPersonality
 
 class PetAttrReactivity(SQLModel, table=True):
     __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id", ondelete="CASCADE")
-    pet_attr: Optional["PetAttr"] = Relationship(back_populates="reactivity")
+    pet_attr_id: UUID | None = Field(default=None, foreign_key="pet_attr.id",
+                                     ondelete="CASCADE", index=True)
+    pet_attr: Optional["PetAttr"] = Relationship(back_populates="reactivities")
     reactivity: PetReactivity
+
+# class PetAttrView(SQLModel, table=True):
+#     __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
+#     __table_args__ = {"info": dict(is_view=True)}
+#     pet_id: UUID = Field(primary_key=True)
+#     sterilized: bool
+#     breeds: list[PetBreed] = Field(sa_column=Column(ARRAY(Enum), nullable=True))
+#     aggression_levels: list[PetAggressionLevel]
+#     allergies: list[PetAllergy]
+#     behaviors: list[PetBehavior]
+#     interactions: list[PetInteraction]
+#     personalities: list[PetPersonality]
+#     reactivities: list[PetReactivity]
+
+
+PET_ATTR_MODEL_MAPPING = {
+    "breeds": (PetAttrBreed, "breed"),
+    "aggression_levels": (PetAttrAggressionLevel, "aggression_level"),
+    "allergies": (PetAttrAllergy, "allergy"),
+    "behaviors": (PetAttrBehavior, "behavior"),
+    "interactions": (PetAttrInteraction, "interaction"),
+    "personalities": (PetAttrPersonality, "personality"),
+    "reactivities": (PetAttrReactivity, "reactivity"),
+}

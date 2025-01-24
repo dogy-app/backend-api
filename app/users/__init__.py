@@ -7,10 +7,11 @@ except metadata.PackageNotFoundError:
     __version__ = ""
 del metadata
 
+__all__ = []
 
 def __getattr__(name) -> Any:
     if name == "UserService":
         from .crud import UserService
-    raise AttributeError(f"Could not find {name}")
+        __all__.append(UserService.__str__)
 
-__all__ = ["UserService"]
+    raise AttributeError(f"Could not find {name}")
