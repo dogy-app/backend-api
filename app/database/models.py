@@ -182,6 +182,20 @@ class PetAttrReactivity(SQLModel, table=True):
     pet_attr: Optional["PetAttr"] = Relationship(back_populates="reactivities")
     reactivity: PetReactivity
 
+# class PetAttrView(SQLModel, table=True):
+#     __tablename__ = declared_attr(lambda cls: to_snake_case(cls.__name__)) # type: ignore
+#     __table_args__ = {"info": dict(is_view=True)}
+#     pet_id: UUID = Field(primary_key=True)
+#     sterilized: bool
+#     breeds: list[PetBreed] = Field(sa_column=Column(ARRAY(Enum), nullable=True))
+#     aggression_levels: list[PetAggressionLevel]
+#     allergies: list[PetAllergy]
+#     behaviors: list[PetBehavior]
+#     interactions: list[PetInteraction]
+#     personalities: list[PetPersonality]
+#     reactivities: list[PetReactivity]
+
+
 PET_ATTR_MODEL_MAPPING = {
     "breeds": (PetAttrBreed, "breed"),
     "aggression_levels": (PetAttrAggressionLevel, "aggression_level"),

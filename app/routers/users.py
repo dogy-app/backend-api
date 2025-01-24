@@ -1,12 +1,11 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path
-from fastapi_clerk_auth import HTTPAuthorizationCredentials
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.database.core import get_session
 from app.errors import InternalUserNotFound, NotAuthorized, UserNotFound
-from app.users.auth import clerk_auth_guard, get_role_from_auth, get_user_id_from_auth
+from app.users.auth import get_role_from_auth, get_user_id_from_auth
 from app.users.crud import UserCreate, UserService
 from app.users.responses import (
     Status,
@@ -19,13 +18,13 @@ from app.users.responses import (
 router = APIRouter()
 user_service = UserService()
 
-@router.get("/test/{user_id}") # type: ignore
-async def get(
-        user_id: str,
-        db: Annotated[AsyncSession, Depends(get_session)]
-    ):
-    user_created = await user_service.get_user_id_from_external_id(session=db,external_id=user_id)
-    return user_created
+# @router.get("/test/{user_id}") # type: ignore
+# async def get(
+#         user_id: str,
+#         db: Annotated[AsyncSession, Depends(get_session)]
+#     ):
+#     user_created = await user_service.get_user_id_from_external_id(session=db,external_id=user_id)
+#     return user_created
 
 @router.post("/", responses=user_post_responses) # type: ignore
 async def create_user(
@@ -40,10 +39,10 @@ async def create_user(
     return user_created
 
 # Test Route
-@router.get("/auth", summary="Authenticate users") # type: ignore
-def auth_user(credentials: HTTPAuthorizationCredentials | None = Depends(clerk_auth_guard)):
-    user_id = get_user_id_from_auth(credentials)
-    return {"user_id": user_id}
+# @router.get("/auth", summary="Authenticate users") # type: ignore
+# def auth_user(credentials: HTTPAuthorizationCredentials | None = Depends(clerk_auth_guard)):
+#     user_id = get_user_id_from_auth(credentials)
+#     return {"user_id": user_id}
 
 @router.get("/me", responses=user_get_responses, summary="Get User By ID") # type: ignore
 async def get_user_by_id(

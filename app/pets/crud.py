@@ -92,8 +92,6 @@ class PetService:
             pet_id: UUID,
             user_id: str | None = None
     ) -> PetResponse:
-
-
         query = (select(Pet, PetAttr, UserPetLink)
         .join(PetAttr)
         .join(UserPetLink)
