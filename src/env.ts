@@ -10,6 +10,7 @@ const env = envious(
 		}),
 		CLERK_SECRET_KEY: Type.String(),
 		CLERK_JWT_PUBLIC_KEY: Type.String(),
+		DATABASE_CONNECTION_STRING: Type.String(),
 	}),
 );
 
