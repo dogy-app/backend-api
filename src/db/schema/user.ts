@@ -1,5 +1,6 @@
 import { v7 } from "uuid";
 
+import { relations } from "drizzle-orm";
 import {
 	boolean,
 	pgTable,
@@ -7,7 +8,8 @@ import {
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { genderEnum } from "./types";
+import { gender } from "./types";
+import userSubscription from "./userSubscription";
 
 const user = pgTable("users", {
 	id: uuid().primaryKey().$defaultFn(v7),
@@ -17,8 +19,15 @@ const user = pgTable("users", {
 	externalId: varchar({ length: 32 }).unique().notNull(),
 	name: varchar({ length: 255 }).notNull(),
 	timezone: varchar({ length: 30 }).notNull(),
-	gender: genderEnum().notNull(),
+	gender: gender().notNull(),
 	hasOnboarded: boolean().default(false),
 });
+
+export const userRelations = relations(user, ({ one }) => ({
+	subscription: one(userSubscription, {
+		fields: [user.id],
+		references: [userSubscription.userId],
+	}),
+}));
 
 export default user;
