@@ -9,6 +9,7 @@ import {
 	PetPersonality,
 	PetReactivity,
 	PetSize,
+	PlaceType,
 	SubscriptionType,
 	enumToPgEnum,
 } from "./enums";
@@ -18,6 +19,11 @@ export const subscriptionType = pgEnum(
 	"subscription_type",
 	enumToPgEnum(SubscriptionType),
 );
+
+export const placeType = pgEnum("place_type", enumToPgEnum(PlaceType));
+
+/**** Pet Enums ****/
+
 export const petSize = pgEnum("pet_size", enumToPgEnum(PetSize));
 export const petBreed = pgEnum("pet_breed", enumToPgEnum(PetBreed));
 export const petAggressionLevel = pgEnum(

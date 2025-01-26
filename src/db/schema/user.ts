@@ -8,6 +8,7 @@ import {
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
+import pet from "./pet";
 import { gender } from "./types";
 import userSubscription from "./userSubscription";
 
@@ -23,11 +24,17 @@ const user = pgTable("users", {
 	hasOnboarded: boolean().default(false),
 });
 
-export const userRelations = relations(user, ({ one }) => ({
+export const userRelations = relations(user, ({ one, many }) => ({
 	subscription: one(userSubscription, {
 		fields: [user.id],
 		references: [userSubscription.userId],
 	}),
+	pets: many(pet),
 }));
 
+export const table = {
+	user,
+} as const;
+
+export type Table = typeof table;
 export default user;

@@ -15,6 +15,12 @@ export enum SubscriptionType {
 	UNKNOWN = "unknown",
 }
 
+export enum PlaceType {
+	DOG_PARK = "dog park",
+}
+
+/**** Pet Types ****/
+
 export enum PetSize {
 	SMALL = "small",
 	MEDIUM = "medium",
