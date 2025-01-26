@@ -1,12 +1,10 @@
 import { swagger } from "@elysiajs/swagger";
 import { Elysia } from "elysia";
 
-import { registerAuthErrors } from "./routes/users/auth/auth.error";
 import authPlugin from "./routes/users/auth/auth.plugin";
 
 const app = new Elysia()
 	.use(swagger())
-	.use(registerAuthErrors)
 	.use(authPlugin)
 	.get("/", ({ userId, role }) => {
 		return {

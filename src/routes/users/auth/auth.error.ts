@@ -1,6 +1,6 @@
 import { DogyAPIException } from "@/lib/error";
 import HTTPStatusCode from "@/lib/status-codes";
-import Elysia from "elysia";
+import { Elysia } from "elysia";
 
 export class InvalidCredentialsError extends DogyAPIException {
 	constructor() {
@@ -22,17 +22,36 @@ export class EmptyCredentialsError extends DogyAPIException {
 	}
 }
 
+export class InvalidAuthenticationType extends DogyAPIException {
+	constructor() {
+		super(
+			"Invalid authentication type. Authentication type must be Bearer token.",
+		);
+		this.name = "InvalidAuthenticationType";
+		this.statusCode = HTTPStatusCode.UNAUTHORIZED;
+
+		Object.setPrototypeOf(this, InvalidAuthenticationType.prototype);
+	}
+}
+
 export const registerAuthErrors = new Elysia()
-	.error({ InvalidCredentialsError, EmptyCredentialsError })
+	.error({
+		InvalidCredentialsError,
+		EmptyCredentialsError,
+		InvalidAuthenticationType,
+	})
 	.onError(({ code, error, set }) => {
+		set.headers["www-authenticate"] = "Bearer";
 		switch (code) {
 			case "InvalidCredentialsError":
 				set.status = error.statusCode;
-				return error;
+				return error.toJSON();
 			case "EmptyCredentialsError":
 				set.status = error.statusCode;
-				return error;
-			default:
-				set.headers["www-authenticate"] = "Bearer";
+				return error.toJSON();
+			case "InvalidAuthenticationType":
+				set.status = error.statusCode;
+				return error.toJSON();
 		}
-	});
+	})
+	.as("global");

@@ -1,0 +1,21 @@
+diff --git a/node_modules/jose/.bun-tag-56c655006b09314d b/.bun-tag-56c655006b09314d
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/dist/browser/index.js b/dist/browser/index.js
+index a31b3a252a9b1b9be3d2f74dd8e48b439ae81a11..b22751485f4291f0ed0c07f9c999182cfc3a4ed4 100644
+--- a/dist/browser/index.js
++++ b/dist/browser/index.js
+@@ -30,3 +30,4 @@ export { generateSecret } from './key/generate_secret.js';
+ import * as base64url_1 from './util/base64url.js';
+ export { base64url_1 as base64url };
+ export { default as cryptoRuntime } from './util/runtime.js';
++export { JWSInvalid } from './util/errors.js';
+diff --git a/dist/types/index.d.ts b/dist/types/index.d.ts
+index 0c68218df7fbe36f39a1cd762282b6f10b5c5040..074fac2b17a03e6c17f972d8d8df9d91236158f4 100644
+--- a/dist/types/index.d.ts
++++ b/dist/types/index.d.ts
+@@ -46,3 +46,4 @@ export type { GenerateSecretOptions } from './key/generate_secret';
+ export * as base64url from './util/base64url';
+ export type { KeyLike, JWK, FlattenedJWSInput, GeneralJWSInput, FlattenedJWS, GeneralJWS, JoseHeaderParameters, JWSHeaderParameters, JWEKeyManagementHeaderParameters, FlattenedJWE, GeneralJWE, JWEHeaderParameters, CritOption, DeflateOption, DecryptOptions, EncryptOptions, JWTClaimVerificationOptions, VerifyOptions, SignOptions, JWTPayload, DeflateFunction, InflateFunction, FlattenedDecryptResult, GeneralDecryptResult, CompactDecryptResult, FlattenedVerifyResult, GeneralVerifyResult, CompactVerifyResult, JWTVerifyResult, JWTDecryptResult, ResolvedKey, CompactJWEHeaderParameters, CompactJWSHeaderParameters, JWTHeaderParameters, JSONWebKeySet, CryptoRuntime, GetKeyFunction, } from './types';
+ export { default as cryptoRuntime } from './util/runtime';
++export { JWSInvalid } from './util/errors';
