@@ -11,6 +11,7 @@
 		"db:push": "drizzle-kit push"
 	},
 	"dependencies": {
+		"@bogeychan/elysia-logger": "^0.1.8",
 		"@elysiajs/jwt": "^1.2.0",
 		"@elysiajs/swagger": "^1.2.0",
 		"@pitininja/envious": "^5.1.0",
