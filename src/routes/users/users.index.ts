@@ -13,23 +13,20 @@ import {
 	patchUserBaseSchema,
 	patchUserSubscriptionSchema,
 } from "./users.models";
-
-const ignorePaths = {
-	"/api/v1/users": "POST",
-};
+import userPlugin from "./users.plugin";
 
 const userRoutes = new Elysia({
 	name: "users/service",
 	prefix: "/users",
 })
-	.use(authPlugin(ignorePaths))
+	.use(userPlugin)
 	.get(
 		"/:id?",
-		async ({ userInternalId }) => {
-			const result = await getUserById(userInternalId);
+		async ({ internalUserId }) => {
+			const result = await getUserById(internalUserId);
 			return result;
 		},
-		{ checkPermissions: true },
+		{ internalUserId: true },
 	)
 	.post(
 		"/",
