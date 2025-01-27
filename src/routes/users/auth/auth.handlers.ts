@@ -1,8 +1,8 @@
 import env from "@/env";
 import { DogyAPIException } from "@/lib/error";
 import { JWSInvalid, importSPKI, jwtVerify } from "jose";
-import { EmptyCredentialsError, InvalidCredentialsError } from "./auth.error";
-import type { ClerkJWTPayload } from "./auth.model";
+import { EmptyCredentialsError, InvalidCredentialsError } from "./auth.errors";
+import type { ClerkJWTPayload } from "./auth.models";
 
 export async function verifyClerkJWT(token: string) {
 	try {

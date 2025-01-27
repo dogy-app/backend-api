@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { inspect } from "bun";
 import { Elysia } from "elysia";
-import { EmptyCredentialsError, InvalidCredentialsError } from "./auth.error";
-import { verifyClerkJWT } from "./auth.handler";
+import { EmptyCredentialsError, InvalidCredentialsError } from "./auth.errors";
+import { verifyClerkJWT } from "./auth.handlers";
 import authPlugin from "./auth.plugin";
 
 declare module "bun" {
