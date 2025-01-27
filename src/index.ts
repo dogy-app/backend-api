@@ -1,18 +1,9 @@
-import { swagger } from "@elysiajs/swagger";
-import { Elysia } from "elysia";
+import app from "./app";
 
-import authPlugin from "./routes/users/auth/auth.plugin";
-
-const app = new Elysia()
-	.use(swagger())
-	.use(authPlugin)
-	.get("/", ({ userId, role }) => {
-		return {
-			user: userId,
-			role: role,
-		};
-	})
-	.listen(3000);
+app.listen({
+	port: 3000,
+	hostname: "localhost",
+});
 
 console.log(
 	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,

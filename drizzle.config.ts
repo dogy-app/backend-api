@@ -8,6 +8,7 @@ export default defineConfig({
 	dbCredentials: {
 		url: env.DATABASE_CONNECTION_STRING,
 	},
+	extensionsFilters: ["postgis"],
 	casing: "snake_case",
 	verbose: true,
 	strict: true,
