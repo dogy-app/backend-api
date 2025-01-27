@@ -8,20 +8,22 @@ import {
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-typebox";
+import { t } from "elysia";
 import pet from "./pet";
 import { gender } from "./types";
 import userSubscription from "./userSubscription";
 
 const user = pgTable("users", {
 	id: uuid().primaryKey().$defaultFn(v7),
-	updatedAt: timestamp()
-		.$defaultFn(() => new Date())
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
 		.$onUpdateFn(() => new Date()),
-	externalId: varchar({ length: 32 }).unique().notNull(),
+	externalId: varchar("external_id", { length: 32 }).unique().notNull(),
 	name: varchar({ length: 255 }).notNull(),
 	timezone: varchar({ length: 30 }).notNull(),
 	gender: gender().notNull(),
-	hasOnboarded: boolean().default(false),
+	hasOnboarded: boolean("has_onboarded").default(false),
 });
 
 export const userRelations = relations(user, ({ one, many }) => ({
@@ -32,9 +34,15 @@ export const userRelations = relations(user, ({ one, many }) => ({
 	pets: many(pet),
 }));
 
-export const table = {
-	user,
-} as const;
+const _createUserSchema = createInsertSchema(user);
+const _optionalExternalId = t.Object({
+	..._createUserSchema.properties,
+	externalId: t.Optional(t.String()),
+});
+export const createUserSchema = t.Omit(_optionalExternalId, [
+	"id",
+	"updatedAt",
+]);
+export type CreateUserSchema = typeof createUserSchema.static;
 
-export type Table = typeof table;
 export default user;
