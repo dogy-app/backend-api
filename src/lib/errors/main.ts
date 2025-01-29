@@ -1,11 +1,17 @@
-import { t } from "elysia";
-import HTTPStatusCode from "./status-codes";
+import { z } from "zod";
 
-const baseErrorResponse = t.Object({
-	message: t.String(),
+const baseErrorResponse = z.object({
+	status: z.literal("error").readonly().optional(),
+	message: z.string(),
+	errorCode: z.string(),
 });
 
-export type ErrorResponse = typeof baseErrorResponse.static;
+export type ErrorResponse = z.infer<typeof baseErrorResponse>;
+
+const testError: ErrorResponse = {
+	message: "test",
+	errorCode: "test",
+};
 
 export class DogyAPIException extends Error {
 	public statusCode: number = HTTPStatusCode.INTERNAL_SERVER_ERROR;

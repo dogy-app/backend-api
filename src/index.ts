@@ -1,10 +1,11 @@
+import { serve } from "bun";
+
 import app from "./app";
+import env from "./env";
 
-app.listen({
-	port: 3000,
-	hostname: "localhost",
+const port = env?.PORT;
+
+serve({
+	fetch: app.fetch,
+	port,
 });
-
-console.log(
-	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
-);

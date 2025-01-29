@@ -1,6 +1,10 @@
-import swagger from "@elysiajs/swagger";
-import { Elysia } from "elysia";
-import { api } from "./api";
+import createApp from "./lib/create-app";
+import configureOpenAPI from "./lib/openapi-spec";
+import index from "./routes/index";
 
-const app = new Elysia().use(swagger()).use(api);
+const app = createApp();
+configureOpenAPI(app);
+
+app.route("/", index);
+
 export default app;
