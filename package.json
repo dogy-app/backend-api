@@ -4,6 +4,7 @@
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"dev": "bun run --watch src/index.ts",
+		"cluster": "bun run ./cluster.ts",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "bun run src/db/migrate.ts",
 		"db:update": "bun run db:generate && bun run db:migrate",
@@ -20,6 +21,7 @@
 		"drizzle-typebox": "^0.2.1",
 		"elysia": "^1.2.10",
 		"pg": "^8.13.1",
+		"pino-pretty": "^13.0.0",
 		"uuid": "^11.0.5"
 	},
 	"override": {
