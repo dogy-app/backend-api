@@ -1,6 +1,7 @@
+import { UserNotFoundError, registerUsersErrors } from "@/lib/errors/users";
 import { Role } from "@/lib/types";
+import userPlugin from "@/middlewares/users/plugin";
 import Elysia from "elysia";
-import authPlugin from "./auth/auth.plugin";
 import {
 	createUser,
 	deleteUser,
@@ -13,64 +14,55 @@ import {
 	patchUserBaseSchema,
 	patchUserSubscriptionSchema,
 } from "./users.models";
-import userPlugin from "./users.plugin";
 
 const userRoutes = new Elysia({
 	name: "users/service",
 	prefix: "/users",
 })
 	.use(userPlugin)
-	.get(
-		"/:id?",
-		async ({ internalUserId }) => {
-			const result = await getUserById(internalUserId);
-			return result;
-		},
-		{ internalUserId: true },
-	)
+	.get("/:id?", async ({ params, internalUserId }) => {
+		if (!params.id) throw UserNotFoundError;
+		const result = await getUserById(params.id);
+		return result;
+	})
 	.post(
-		"/",
-		async ({ body, userId }) => {
-			body.externalId = userId;
+		"/:id?",
+		async ({ body, params, internalUserId }) => {
+			if (!params.id) throw UserNotFoundError;
+			body.externalId = params.id;
 			const result = await createUser(body);
 			return result;
 		},
 		{
 			body: createFullUserSchema,
-			checkPermissions: true,
 		},
 	)
 	.patch(
 		"/:id?",
-		async ({ body, userInternalId }) => {
-			const result = await updateUser(userInternalId, body);
+		async ({ body, params }) => {
+			if (!params.id) throw UserNotFoundError;
+			const result = await updateUser(params.id, body);
 			return result;
 		},
 		{
 			body: patchUserBaseSchema,
-			checkPermissions: true,
 		},
 	)
 	.patch(
 		"/subscriptions/:id?",
-		async ({ body, userInternalId }) => {
-			const result = await updateUserSubscription(userInternalId, body);
+		async ({ body, params }) => {
+			if (!params.id) throw UserNotFoundError;
+			const result = await updateUserSubscription(params.id, body);
 			return result;
 		},
 		{
 			body: patchUserSubscriptionSchema,
-			checkPermissions: true,
 		},
 	)
-	.delete(
-		"/:id?",
-		async ({ userInternalId }) => {
-			const result = await deleteUser(userInternalId);
-			return result;
-		},
-		{
-			checkPermissions: true,
-		},
-	);
+	.delete("/:id?", async ({ params }) => {
+		if (!params.id) throw UserNotFoundError;
+		const result = await deleteUser(params.id);
+		return result;
+	});
 
 export default userRoutes;

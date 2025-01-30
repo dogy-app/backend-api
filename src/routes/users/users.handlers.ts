@@ -3,9 +3,7 @@ import type { CreateUserSchema } from "@/db/schema/user";
 import user from "@/db/schema/user";
 import type { CreateUserSubscriptionSchema } from "@/db/schema/userSubscription";
 import userSubscription from "@/db/schema/userSubscription";
-import { DogyAPIException } from "@/lib/error";
 import { eq } from "drizzle-orm";
-import { UserNotFoundError } from "./users.errors";
 import type {
 	CreateFullUserSchema,
 	PatchUserBaseSchema,
@@ -37,24 +35,6 @@ export async function createUser(data: CreateFullUserSchema) {
 	});
 
 	return createdUser;
-}
-
-export async function getInternalIdFromExternalId(externalId: string) {
-	try {
-		const userRecord = await db.query.user.findFirst({
-			where: eq(user.externalId, externalId),
-			columns: {
-				id: true,
-			},
-		});
-		if (!userRecord) throw new UserNotFoundError(externalId);
-		return userRecord.id;
-	} catch (e) {
-		if (e instanceof UserNotFoundError) throw e;
-		throw new DogyAPIException(
-			"User not found. Please message @Sheape to fix error handling.",
-		);
-	}
 }
 
 export async function getUserById(userId: string) {
