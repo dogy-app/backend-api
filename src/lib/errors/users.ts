@@ -1,12 +1,12 @@
-import { DogyAPIException } from "@/lib/error";
-import HTTPStatusCode from "@/lib/status-codes";
+import { CONFLICT, NOT_FOUND } from "@/lib/status-codes";
 import { Elysia } from "elysia";
+import { DogyAPIException } from "./core";
 
 export class UserNotFoundError extends DogyAPIException {
 	constructor(userId: string) {
 		super(`User ${userId} not found. Provide a valid user ID.`);
 		this.name = "UserNotFoundError";
-		this.statusCode = HTTPStatusCode.NOT_FOUND;
+		this.statusCode = NOT_FOUND;
 
 		Object.setPrototypeOf(this, UserNotFoundError.prototype);
 	}
@@ -16,7 +16,7 @@ export class UserAlreadyExistsError extends DogyAPIException {
 	constructor(userId: string) {
 		super(`User ${userId} already exists. Provide a unique user ID.`);
 		this.name = "UserAlreadyExistsError";
-		this.statusCode = HTTPStatusCode.CONFLICT;
+		this.statusCode = CONFLICT;
 
 		Object.setPrototypeOf(this, UserAlreadyExistsError.prototype);
 	}
