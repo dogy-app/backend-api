@@ -1,0 +1,5 @@
+# deps
+.env.*
+.env
+*.pem
+tmp/
