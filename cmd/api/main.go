@@ -1,53 +1,61 @@
-package main
+package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"log/slog"
 	"net/http"
 
-	"github.com/dogy-app/backend-api/internal/middleware"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+
+	"github.com/dogy-app/backend-api/middleware"
+	"github.com/dogy-app/backend-api/services/users"
 )
 
-type HelloWorldResponse struct {
-	Message string `json:"message"`
+type APIServer struct {
+	addr string
 }
 
-func main() {
-	fmt.Println("Starting server on :8080")
+func NewAPIServer(addr string) *APIServer {
+	return &APIServer{addr: addr}
+}
 
-	rootRouter := http.NewServeMux()
-	rootRouter.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(HelloWorldResponse{Message: "Hello World!!"})
+func (s *APIServer) Start() error {
+	app := fiber.New(fiber.Config{
+		AppName:      "Dogy API",
+		Prefork:      false,
+		ErrorHandler: customErrorHandler,
+	})
+	log.Println("Listening on", s.addr)
+
+	app.Use(logger.New(logger.Config{
+		Format: "${time} ${status} - ${method} ${path}\n",
+	}))
+
+	// --------- / ----------- //
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{"message": "Hello, World!"})
 	})
 
-	rootRouter.Handle("/", http.StripPrefix("", rootRouter))
+	// --------- /api/v1 ----------- //
+	api := app.Group("/api")
+	v1 := api.Group("/v1")
 
-	router := http.NewServeMux()
-	stack := middleware.CreateStack(
-		middleware.Logging,
-		middleware.ValidateToken,
-	)
-
-	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(HelloWorldResponse{Message: "Hello World!!"})
+	// Register routes here for v1 endpoints
+	v1.Get("/", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{"message": "Hello, World!"})
 	})
 
-	v1Router := http.NewServeMux()
-	v1Router.Handle("/api/v1/", http.StripPrefix("/api/v1", router))
+	// --------- /users ----------- //
+	usersRoutes := v1.Group("/users")
+	usersRoutes.Use(middleware.ValidateToken)
 
-	userRouter := http.NewServeMux()
-	userRouter.Handle("/users/", http.StripPrefix("/users", v1Router))
+	userSvc := users.NewUserService()
+	usersRoutes.Get("/", userSvc.GetUser)
 
-	server := http.Server{
-		Addr:    ":8080",
-		Handler: stack(rootRouter),
-	}
-
-	err := server.ListenAndServe()
-	if err != nil {
-		slog.Error("There was an issue starting the server: ")
+	if err := app.Listen(fmt.Sprintf(":%s", s.addr)); err != http.ErrServerClosed {
 		log.Fatal(err)
+		return err
 	}
+	return nil
 }
