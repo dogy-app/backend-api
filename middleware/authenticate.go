@@ -1,15 +1,14 @@
 package middleware
 
 import (
-	"context"
 	"crypto/rsa"
-	"encoding/json"
 	"fmt"
+	"log"
 	"log/slog"
-	"net/http"
 	"os"
 	"strings"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -18,17 +17,6 @@ const (
 	ErrMsgInvalidToken    = "Invalid token. Please provide a valid token."
 	ErrMsgInvalidAuthType = "Invalid authentication type. Please provide a valid token."
 )
-
-type ErrorResponse struct {
-	Message string `json:"message"`
-}
-
-func ErrorAuth(w http.ResponseWriter, msg string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Add("WWW-Authenticate", "Bearer realm=\"Restricted\"")
-	w.WriteHeader(http.StatusUnauthorized)
-	json.NewEncoder(w).Encode(ErrorResponse{Message: msg})
-}
 
 type ClerkAuthClaims struct {
 	Role *string `json:"role"`
@@ -80,53 +68,50 @@ func verifyJWT(tokenString string, publicKey *rsa.PublicKey) (*ClerkAuthClaims, 
 	return &ClerkAuthClaims{}, err
 }
 
-func validateHeader(w http.ResponseWriter, header string) (string, bool) {
+func validateHeader(header string) (string, error) {
 	// Check if the Authorization header is empty
 	if header == "" {
-		ErrorAuth(w, ErrMsgEmptyToken)
-		return "", false
+		log.Println(ErrMsgEmptyToken)
+		return "", fiber.NewError(fiber.StatusUnauthorized, ErrMsgEmptyToken)
 	}
 
 	var authToken []string = strings.Split(header, " ")
 	if len(authToken) != 2 {
-		ErrorAuth(w, ErrMsgInvalidToken)
-		return "", false
+		log.Println(ErrMsgInvalidToken)
+		return "", fiber.NewError(fiber.StatusUnauthorized, ErrMsgInvalidToken)
 	}
 
 	if authToken[0] != "Bearer" {
-		ErrorAuth(w, ErrMsgInvalidAuthType)
-		return "", false
+		log.Println(ErrMsgInvalidAuthType)
+		return "", fiber.NewError(fiber.StatusUnauthorized, ErrMsgInvalidAuthType)
 	}
-	return authToken[1], true
+	return authToken[1], nil
 }
 
 // ValidateToken
-func ValidateToken(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		slog.Debug("Validating token...")
-		authHeader := r.Header.Get("Authorization")
-		authToken, ok := validateHeader(w, authHeader)
+func ValidateToken(c *fiber.Ctx) error {
+	log.Println("Validating token...")
+	authHeader := c.Get("Authorization")
 
-		if !ok {
-			return
-		}
+	authToken, err := validateHeader(authHeader)
+	if err != nil {
+		c.Set("WWW-Authenticate", "Bearer realm=\"Restricted\"")
+		return err
+	}
 
-		publicKey, err := importPublicKey("public_key.pem")
-		if err != nil {
-			slog.Error("Error importing public key.")
-		}
+	publicKey, err := importPublicKey("public_key.pem")
+	if err != nil {
+		slog.Error("Error importing public key.")
+	}
 
-		authClaims, err := verifyJWT(authToken, publicKey)
-		if err != nil || authClaims.Subject == "" {
-			ErrorAuth(w, ErrMsgInvalidToken)
-			return
-		}
+	authClaims, err := verifyJWT(authToken, publicKey)
+	if err != nil || authClaims.Subject == "" {
+		return fiber.NewError(fiber.StatusUnauthorized, ErrMsgInvalidToken)
+	}
 
-		ctx := context.WithValue(r.Context(), "middleware.auth.id", authClaims.Subject)
-		ctx = context.WithValue(ctx, "middleware.auth.role", safeDereference(authClaims.Role))
-		req := r.WithContext(ctx)
+	c.Locals("auth.id", authClaims.Subject)
+	c.Locals("auth.role", safeDereference(authClaims.Role))
 
-		slog.Debug("Token validated.")
-		next.ServeHTTP(w, req)
-	})
+	slog.Debug("Token validated.")
+	return c.Next()
 }

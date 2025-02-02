@@ -1,12 +1,8 @@
 package middleware
 
 import (
-	"context"
-	"log/slog"
-	"net/http"
-	"time"
-
-	"github.com/icefed/zlog"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
 const (
@@ -30,37 +26,9 @@ type LogEntry struct {
 	Response   string `json:"response"`
 }
 
-type wrappedWriter struct {
-	http.ResponseWriter
-	statusCode int
-}
-
-func Logging(next http.Handler) http.Handler {
-	logger := slog.New(zlog.NewJSONHandler(&zlog.Config{
-		HandlerOptions: slog.HandlerOptions{
-			Level: slog.LevelDebug,
-		},
-		Development: true,
-	},
-	))
-
-	slog.SetDefault(logger)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		wrapped := &wrappedWriter{
-			ResponseWriter: w,
-			statusCode:     http.StatusOK,
-		}
-
-		next.ServeHTTP(wrapped, r)
-		slog.LogAttrs(
-			context.Background(),
-			slog.LevelInfo,
-			"Request completed",
-			slog.Int("status_code", wrapped.statusCode),
-			slog.String("method", r.Method),
-			slog.String("path", r.URL.Path),
-			slog.String("time", time.Since(start).String()),
-		)
+func Logger(c *fiber.Ctx) error {
+	logger.New(logger.Config{
+		Format: "${time} ${status} - ${method} ${path}\n",
 	})
+	return c.Next()
 }
