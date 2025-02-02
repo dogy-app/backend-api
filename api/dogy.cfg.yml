@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/refs/heads/main/configuration-schema.json
+package: api
+generate:
+  fiber-server: true
+  models: true
+output: dogy.gen.go
