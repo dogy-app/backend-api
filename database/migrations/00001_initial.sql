@@ -105,49 +105,49 @@ CREATE TABLE IF NOT EXISTS "pet_attrs" (
 );
 
 CREATE TABLE "pet_attr_aggression_levels" (
-	"id" UUID PRIMARY KEY NOT NULL,
+	"id" UUID PRIMARY KEY DEFAULT UUID_GENERATE_V7(),
 	"pet_attr_id" UUID NOT NULL,
 	"aggression_level" "pet_aggression_level" NOT NULL
 );
 
 CREATE TABLE "pet_attr_allergies" (
-	"id" UUID PRIMARY KEY NOT NULL,
+	"id" UUID PRIMARY KEY DEFAULT UUID_GENERATE_V7(),
 	"pet_attr_id" UUID NOT NULL,
-	"allergy" "pet_aggression_level" NOT NULL
+	"allergy" "pet_allergy" NOT NULL
 );
 
 CREATE TABLE "pet_attr_behaviors" (
-	"id" UUID PRIMARY KEY NOT NULL,
+	"id" UUID PRIMARY KEY DEFAULT UUID_GENERATE_V7(),
 	"pet_attr_id" UUID NOT NULL,
 	"behavior" "pet_behavior" NOT NULL
 );
 
 CREATE TABLE "pet_attr_breeds" (
-	"id" UUID PRIMARY KEY NOT NULL,
+	"id" UUID PRIMARY KEY DEFAULT UUID_GENERATE_V7(),
 	"pet_attr_id" UUID NOT NULL,
 	"breed" "pet_breed" NOT NULL
 );
 
 CREATE TABLE "pet_attr_interactions" (
-	"id" UUID PRIMARY KEY NOT NULL,
+	"id" UUID PRIMARY KEY DEFAULT UUID_GENERATE_V7(),
 	"pet_attr_id" UUID NOT NULL,
 	"interaction" "pet_interaction" NOT NULL
 );
 
 CREATE TABLE "pet_attr_personalities" (
-	"id" UUID PRIMARY KEY NOT NULL,
+	"id" UUID PRIMARY KEY DEFAULT UUID_GENERATE_V7(),
 	"pet_attr_id" UUID NOT NULL,
 	"personality" "pet_personality" NOT NULL
 );
 
 CREATE TABLE "pet_attr_reactivities" (
-	"id" UUID PRIMARY KEY NOT NULL,
+	"id" UUID PRIMARY KEY DEFAULT UUID_GENERATE_V7(),
 	"pet_attr_id" UUID NOT NULL,
 	"reactivity" "pet_reactivity" NOT NULL
 );
 
 CREATE TABLE "users_pets_link" (
-	"id" UUID PRIMARY KEY NOT NULL,
+	"id" UUID PRIMARY KEY DEFAULT UUID_GENERATE_V7(),
 	"pet_id" UUID NOT NULL,
 	"user_id" UUID NOT NULL,
     "is_dog_owner" BOOLEAN DEFAULT TRUE NOT NULL,
@@ -155,7 +155,7 @@ CREATE TABLE "users_pets_link" (
 );
 
 CREATE TABLE "places" (
-	"id" UUID PRIMARY KEY NOT NULL,
+	"id" UUID PRIMARY KEY DEFAULT UUID_GENERATE_V7(),
     "created_at" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     "location" GEOMETRY(POINT, 4326) NOT NULL,
@@ -174,7 +174,7 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
 CREATE TABLE "places_metadata" (
-	"id" UUID PRIMARY KEY NOT NULL,
+	"id" UUID PRIMARY KEY DEFAULT UUID_GENERATE_V7(),
     "place_id" UUID NOT NULL,
     "city" TEXT NOT NULL,
     "country" TEXT NOT NULL,
@@ -182,14 +182,14 @@ CREATE TABLE "places_metadata" (
     CONSTRAINT "places_metadata_place_id_unique" UNIQUE("place_id")
 );
 
-ALTER TABLE "pet_attrs" ADD CONSTRAINT "pet_attrs_pet_id_pets_id_fk" FOREIGN KEY ("pet_id") REFERENCES "public"."pets"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "pet_attr_aggression_levels" ADD CONSTRAINT "pet_attr_aggression_levels_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "pet_attr_allergies" ADD CONSTRAINT "pet_attr_allergies_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "pet_attr_behaviors" ADD CONSTRAINT "pet_attr_behaviors_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "pet_attr_breeds" ADD CONSTRAINT "pet_attr_breeds_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "pet_attr_interactions" ADD CONSTRAINT "pet_attr_interactions_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "pet_attr_personalities" ADD CONSTRAINT "pet_attr_personalities_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "pet_attr_reactivities" ADD CONSTRAINT "pet_attr_reactivities_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pet_attrs" ADD CONSTRAINT "pet_attrs_pet_id_pets_id_fk" FOREIGN KEY ("pet_id") REFERENCES "public"."pets"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pet_attr_aggression_levels" ADD CONSTRAINT "pet_attr_aggression_levels_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pet_attr_allergies" ADD CONSTRAINT "pet_attr_allergies_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pet_attr_behaviors" ADD CONSTRAINT "pet_attr_behaviors_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pet_attr_breeds" ADD CONSTRAINT "pet_attr_breeds_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pet_attr_interactions" ADD CONSTRAINT "pet_attr_interactions_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pet_attr_personalities" ADD CONSTRAINT "pet_attr_personalities_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pet_attr_reactivities" ADD CONSTRAINT "pet_attr_reactivities_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_subscriptions" ADD CONSTRAINT "user_subscriptions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;
 ALTER TABLE "user_notifications" ADD CONSTRAINT "user_notifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;
 ALTER TABLE "users_pets_link" ADD CONSTRAINT "users_pets_link_user_id_users_id" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;

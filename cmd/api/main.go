@@ -10,6 +10,7 @@ import (
 
 	"github.com/dogy-app/backend-api/database"
 	"github.com/dogy-app/backend-api/middleware"
+	"github.com/dogy-app/backend-api/services/pets"
 	"github.com/dogy-app/backend-api/services/users"
 )
 
@@ -63,6 +64,17 @@ func (s *APIServer) Start() error {
 	}))
 	usersRoutes.Get("/:id?", userSvc.GetUserByID)
 	usersRoutes.Delete("/:id?", userSvc.DeleteUser)
+
+	// --------- /pets ----------- //
+	petsSvc := pets.NewPetService(database.Pool)
+
+	petsRoutes := v1.Group("/pets")
+	petsRoutes.Get("/breeds", petsSvc.GetAllPetBreeds)
+	petsRoutes.Use(middleware.ValidateToken)
+	petsRoutes.Use(middleware.CurrentUserID(middleware.DBConfig{
+		UserRepo: usersRepo,
+	}))
+	petsRoutes.Post("/:id?", petsSvc.CreatePet)
 
 	if err := app.Listen(fmt.Sprintf(":%s", s.addr)); err != http.ErrServerClosed {
 		log.Fatal(err)

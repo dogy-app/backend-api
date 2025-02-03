@@ -18,7 +18,7 @@ sql:
             go_type:
               import: "github.com/google/uuid"
               type: "UUID"
-          - db_type: "Timestamp"
+          - db_type: "pg_catalog.timestamp"
             go_type:
               import: "time"
               type: "Time"
@@ -26,3 +26,7 @@ sql:
             go_type:
               import: "time"
               type: "Time"
+          - db_type: "pg_catalog.numeric"
+            go_type:
+              import: "github.com/shopspring/decimal"
+              type: "Decimal"
