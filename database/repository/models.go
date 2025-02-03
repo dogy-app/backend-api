@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 type Gender string
@@ -1914,7 +1915,7 @@ type Pet struct {
 	PhotoUrl  string           `json:"photoUrl"`
 	Gender    Gender           `json:"gender"`
 	Size      PetSize          `json:"size"`
-	Weight    pgtype.Numeric   `json:"weight"`
+	Weight    decimal.Decimal  `json:"weight"`
 }
 
 type PetAttr struct {
@@ -1930,9 +1931,9 @@ type PetAttrAggressionLevel struct {
 }
 
 type PetAttrAllergy struct {
-	ID        uuid.UUID          `json:"id"`
-	PetAttrID uuid.UUID          `json:"petAttrID"`
-	Allergy   PetAggressionLevel `json:"allergy"`
+	ID        uuid.UUID  `json:"id"`
+	PetAttrID uuid.UUID  `json:"petAttrID"`
+	Allergy   PetAllergy `json:"allergy"`
 }
 
 type PetAttrBehavior struct {
