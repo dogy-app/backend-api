@@ -88,6 +88,13 @@ func validateHeader(header string) (string, error) {
 	return authToken[1], nil
 }
 
+type keyType struct{}
+
+var (
+	AuthUserId   keyType
+	AuthUserRole keyType
+)
+
 // ValidateToken
 func ValidateToken(c *fiber.Ctx) error {
 	log.Println("Validating token...")
@@ -109,8 +116,8 @@ func ValidateToken(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, ErrMsgInvalidToken)
 	}
 
-	c.Locals("auth.id", authClaims.Subject)
-	c.Locals("auth.role", safeDereference(authClaims.Role))
+	c.Locals(AuthUserId, authClaims.Subject)
+	c.Locals(AuthUserRole, safeDereference(authClaims.Role))
 
 	slog.Debug("Token validated.")
 	return c.Next()

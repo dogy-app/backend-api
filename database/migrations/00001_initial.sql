@@ -52,7 +52,8 @@ CREATE TABLE IF NOT EXISTS "users" (
     "external_id" VARCHAR(32) NOT NULL,
     "timezone" VARCHAR(32) NOT NULL,
     "gender" "gender" NOT NULL,
-    "has_onboarded" BOOLEAN DEFAULT FALSE NOT NULL
+    "has_onboarded" BOOLEAN DEFAULT FALSE NOT NULL,
+    CONSTRAINT "users_external_id_unique" UNIQUE("external_id")
 );
 
 CREATE TRIGGER trigger_set_updated_at_on_users
@@ -70,9 +71,6 @@ CREATE TABLE IF NOT EXISTS "user_notifications" (
     CONSTRAINT "user_notifications_user_id_unique" UNIQUE("user_id")
 );
 
-ALTER TABLE "user_notifications" ADD CONSTRAINT "user_notifications_user_id_fkey"
-FOREIGN KEY ("user_id") REFERENCES "users" ("id");
-
 CREATE TABLE IF NOT EXISTS "user_subscriptions" (
     "id" UUID PRIMARY KEY DEFAULT UUID_GENERATE_V7(),
     "user_id" UUID NOT NULL,
@@ -81,9 +79,6 @@ CREATE TABLE IF NOT EXISTS "user_subscriptions" (
     "is_trial_mode" BOOLEAN DEFAULT FALSE NOT NULL,
     CONSTRAINT "user_subscriptions_user_id_unique" UNIQUE("user_id")
 );
-
-ALTER TABLE "user_subscriptions" ADD CONSTRAINT "user_subscriptions_user_id_fkey"
-FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 
 CREATE TABLE IF NOT EXISTS "pets" (
     "id" UUID PRIMARY KEY DEFAULT UUID_GENERATE_V7(),
@@ -151,6 +146,14 @@ CREATE TABLE "pet_attr_reactivities" (
 	"reactivity" "pet_reactivity" NOT NULL
 );
 
+CREATE TABLE "users_pets_link" (
+	"id" UUID PRIMARY KEY NOT NULL,
+	"pet_id" UUID NOT NULL,
+	"user_id" UUID NOT NULL,
+    "is_dog_owner" BOOLEAN DEFAULT TRUE NOT NULL,
+    "is_dog_sitter" BOOLEAN DEFAULT FALSE NOT NULL
+);
+
 CREATE TABLE "places" (
 	"id" UUID PRIMARY KEY NOT NULL,
     "created_at" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -160,11 +163,10 @@ CREATE TABLE "places" (
     "name" VARCHAR(255) NOT NULL,
     "description" TEXT NOT NULL,
     "type" "place_category" NOT NULL,
-    "website_url" TEXT NOT NULL
-    "images" TEXT[] NOT NULL
-
+    "website_url" TEXT NOT NULL,
+    "images" TEXT[] NOT NULL,
     CONSTRAINT "places_gmaps_id_unique" UNIQUE("gmaps_id")
-)
+);
 
 CREATE TRIGGER trigger_set_updated_at_on_places
 BEFORE UPDATE ON "places"
@@ -177,9 +179,8 @@ CREATE TABLE "places_metadata" (
     "city" TEXT NOT NULL,
     "country" TEXT NOT NULL,
     "full_address" TEXT NOT NULL,
-
     CONSTRAINT "places_metadata_place_id_unique" UNIQUE("place_id")
-)
+);
 
 ALTER TABLE "pet_attrs" ADD CONSTRAINT "pet_attrs_pet_id_pets_id_fk" FOREIGN KEY ("pet_id") REFERENCES "public"."pets"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pet_attr_aggression_levels" ADD CONSTRAINT "pet_attr_aggression_levels_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -189,9 +190,11 @@ ALTER TABLE "pet_attr_breeds" ADD CONSTRAINT "pet_attr_breeds_pet_attr_id_pet_at
 ALTER TABLE "pet_attr_interactions" ADD CONSTRAINT "pet_attr_interactions_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pet_attr_personalities" ADD CONSTRAINT "pet_attr_personalities_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pet_attr_reactivities" ADD CONSTRAINT "pet_attr_reactivities_pet_attr_id_pet_attrs_id_fk" FOREIGN KEY ("pet_attr_id") REFERENCES "public"."pet_attrs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "user_subscriptions" ADD CONSTRAINT "user_subscriptions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "user_notifications" ADD CONSTRAINT "user_notifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "places_metadata" ADD CONSTRAINT "places_metadata_place_id_places_id_fk" FOREIGN KEY ("places_id") REFERENCES "public"."places"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "user_subscriptions" ADD CONSTRAINT "user_subscriptions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;
+ALTER TABLE "user_notifications" ADD CONSTRAINT "user_notifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;
+ALTER TABLE "users_pets_link" ADD CONSTRAINT "users_pets_link_user_id_users_id" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "users_pets_link" ADD CONSTRAINT "users_pets_link_pet_id_pets_id" FOREIGN KEY ("pet_id") REFERENCES "public"."pets"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "places_metadata" ADD CONSTRAINT "places_metadata_place_id_places_id_fk" FOREIGN KEY ("place_id") REFERENCES "public"."places"("id") ON DELETE cascade ON UPDATE no action;
 -- +goose StatementEnd
 
 -- +goose Down
@@ -199,6 +202,7 @@ ALTER TABLE "places_metadata" ADD CONSTRAINT "places_metadata_place_id_places_id
 DROP TABLE IF EXISTS "places_metadata";
 DROP TRIGGER IF EXISTS trigger_set_updated_at_on_places ON "places";
 DROP TABLE IF EXISTS "places";
+DROP TABLE IF EXISTS "users_pets_link";
 DROP TABLE IF EXISTS "pet_attr_reactivities";
 DROP TABLE IF EXISTS "pet_attr_personalities";
 DROP TABLE IF EXISTS "pet_attr_interactions";
@@ -215,6 +219,7 @@ DROP TABLE IF EXISTS "user_notifications";
 DROP TRIGGER IF EXISTS trigger_set_updated_at_on_users ON "users";
 DROP TABLE IF EXISTS "users";
 
+DROP TYPE IF EXISTS "public"."place_category";
 DROP TYPE IF EXISTS "public"."subscription_type";
 DROP TYPE IF EXISTS "public"."pet_size";
 DROP TYPE IF EXISTS "public"."pet_reactivity";

@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
+	"github.com/dogy-app/backend-api/database"
 	"github.com/dogy-app/backend-api/middleware"
 	"github.com/dogy-app/backend-api/services/users"
 )
@@ -21,6 +22,9 @@ func NewAPIServer(addr string) *APIServer {
 }
 
 func (s *APIServer) Start() error {
+	database.ConnectDB()
+	defer database.CloseDB()
+
 	app := fiber.New(fiber.Config{
 		AppName:      "Dogy API",
 		Prefork:      false,
@@ -34,7 +38,7 @@ func (s *APIServer) Start() error {
 
 	// --------- / ----------- //
 	app.Get("/", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Hello, World!"})
+		return c.JSON(fiber.Map{"message": "Welcome to Dogy API"})
 	})
 
 	// --------- /api/v1 ----------- //
@@ -43,15 +47,16 @@ func (s *APIServer) Start() error {
 
 	// Register routes here for v1 endpoints
 	v1.Get("/", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Hello, World!"})
+		return c.JSON(fiber.Map{"message": "Welcome to Dogy API v1"})
 	})
 
 	// --------- /users ----------- //
 	usersRoutes := v1.Group("/users")
 	usersRoutes.Use(middleware.ValidateToken)
 
-	userSvc := users.NewUserService()
-	usersRoutes.Get("/", userSvc.GetUser)
+	userSvc := users.NewUserService(database.Pool)
+	usersRoutes.Get("/:id?", userSvc.GetUserByID)
+	usersRoutes.Post("/:id?", userSvc.CreateUser)
 
 	if err := app.Listen(fmt.Sprintf(":%s", s.addr)); err != http.ErrServerClosed {
 		log.Fatal(err)
