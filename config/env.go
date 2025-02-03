@@ -8,7 +8,8 @@ import (
 )
 
 type Config struct {
-	Port string
+	Port        string
+	DatabaseURI string
 }
 
 func getEnv(key, fallback string) string {
@@ -19,11 +20,20 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+func getEnvRequired(key string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	slog.Error("Environment variable not set", "error", key)
+	return ""
+}
+
 var Env = initConfig()
 
 func initConfig() Config {
 	godotenv.Load()
 	return Config{
-		Port: getEnv("PORT", "8080"),
+		Port:        getEnv("PORT", "8080"),
+		DatabaseURI: getEnvRequired("DATABASE_CONNECTION_STRING"),
 	}
 }
