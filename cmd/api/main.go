@@ -51,12 +51,18 @@ func (s *APIServer) Start() error {
 	})
 
 	// --------- /users ----------- //
+	usersRepo := users.NewUserRepository(database.Pool)
+	userSvc := users.NewUserService(database.Pool)
+
 	usersRoutes := v1.Group("/users")
 	usersRoutes.Use(middleware.ValidateToken)
-
-	userSvc := users.NewUserService(database.Pool)
-	usersRoutes.Get("/:id?", userSvc.GetUserByID)
 	usersRoutes.Post("/:id?", userSvc.CreateUser)
+
+	usersRoutes.Use(middleware.CurrentUserID(middleware.DBConfig{
+		UserRepo: usersRepo,
+	}))
+	usersRoutes.Get("/:id?", userSvc.GetUserByID)
+	usersRoutes.Delete("/:id?", userSvc.DeleteUser)
 
 	if err := app.Listen(fmt.Sprintf(":%s", s.addr)); err != http.ErrServerClosed {
 		log.Fatal(err)

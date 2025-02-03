@@ -107,22 +107,63 @@ func (q *Queries) CreateUserSubscription(ctx context.Context, arg CreateUserSubs
 	return i, err
 }
 
-const getUserByID = `-- name: GetUserByID :one
-SELECT id, created_at, updated_at, name, external_id, timezone, gender, has_onboarded FROM users where id = $1
+const deleteUser = `-- name: DeleteUser :exec
+DELETE FROM users WHERE id = $1
 `
 
-func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
+func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteUser, id)
+	return err
+}
+
+const getInternalID = `-- name: GetInternalID :one
+SELECT id FROM users where external_id = $1
+`
+
+func (q *Queries) GetInternalID(ctx context.Context, externalID string) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, getInternalID, externalID)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT users.id, users.created_at, users.updated_at, users.name, users.external_id, users.timezone, users.gender, users.has_onboarded, user_subscriptions.id, user_subscriptions.user_id, user_subscriptions.trial_start_date, user_subscriptions.subscription_type, user_subscriptions.is_trial_mode, user_notifications.id, user_notifications.user_id, user_notifications.enabled, user_notifications.is_registered, user_notifications.daily_enabled, user_notifications.playtime_enabled
+FROM users
+LEFT JOIN user_subscriptions ON users.id = user_subscriptions.user_id
+LEFT JOIN user_notifications ON users.id = user_notifications.user_id
+WHERE users.id = $1
+`
+
+type GetUserByIDRow struct {
+	User             User             `json:"user"`
+	UserSubscription UserSubscription `json:"userSubscription"`
+	UserNotification UserNotification `json:"userNotification"`
+}
+
+func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error) {
 	row := q.db.QueryRow(ctx, getUserByID, id)
-	var i User
+	var i GetUserByIDRow
 	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Name,
-		&i.ExternalID,
-		&i.Timezone,
-		&i.Gender,
-		&i.HasOnboarded,
+		&i.User.ID,
+		&i.User.CreatedAt,
+		&i.User.UpdatedAt,
+		&i.User.Name,
+		&i.User.ExternalID,
+		&i.User.Timezone,
+		&i.User.Gender,
+		&i.User.HasOnboarded,
+		&i.UserSubscription.ID,
+		&i.UserSubscription.UserID,
+		&i.UserSubscription.TrialStartDate,
+		&i.UserSubscription.SubscriptionType,
+		&i.UserSubscription.IsTrialMode,
+		&i.UserNotification.ID,
+		&i.UserNotification.UserID,
+		&i.UserNotification.Enabled,
+		&i.UserNotification.IsRegistered,
+		&i.UserNotification.DailyEnabled,
+		&i.UserNotification.PlaytimeEnabled,
 	)
 	return i, err
 }
