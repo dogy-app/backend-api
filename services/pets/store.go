@@ -19,10 +19,6 @@ func NewPetRepository(db *pgxpool.Pool) *PetRepository {
 	return &PetRepository{db: db}
 }
 
-func (r *PetRepository) GetAllPetBreeds() ([]repository.PetBreed, error) {
-	return repository.AllPetBreedValues(), nil
-}
-
 // TODO: Refactor and isolate into smaller functions
 func (r *PetRepository) CreatePet(
 	ctx context.Context,
@@ -159,4 +155,32 @@ func (r *PetRepository) CreatePet(
 			Attributes:  pet.Attributes,
 		},
 	}, nil
+}
+
+func (r *PetRepository) GetAllPetBreeds() []repository.PetBreed {
+	return repository.AllPetBreedValues()
+}
+
+func (r *PetRepository) GetAllPetAggressionLevels() []repository.PetAggressionLevel {
+	return repository.AllPetAggressionLevelValues()
+}
+
+func (r *PetRepository) GetAllPetAllergies() []repository.PetAllergy {
+	return repository.AllPetAllergyValues()
+}
+
+func (r *PetRepository) GetAllPetBehaviors() []repository.PetBehavior {
+	return repository.AllPetBehaviorValues()
+}
+
+func (r *PetRepository) GetAllPetInteractions() []repository.PetInteraction {
+	return repository.AllPetInteractionValues()
+}
+
+func (r *PetRepository) GetAllPetPersonalities() []repository.PetPersonality {
+	return repository.AllPetPersonalityValues()
+}
+
+func (r *PetRepository) GetAllPetReactivities() []repository.PetReactivity {
+	return repository.AllPetReactivityValues()
 }

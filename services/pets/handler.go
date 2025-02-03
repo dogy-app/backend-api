@@ -18,14 +18,6 @@ func NewPetService(db *pgxpool.Pool) *PetService {
 	return &PetService{repo: NewPetRepository(db)}
 }
 
-func (p *PetService) GetAllPetBreeds(c *fiber.Ctx) error {
-	petBreeds, err := p.repo.GetAllPetBreeds()
-	if err != nil {
-		return err
-	}
-	return c.JSON(petBreeds)
-}
-
 func (p *PetService) CreatePet(c *fiber.Ctx) error {
 	req := new(CreatePetRequest)
 	if err := c.BodyParser(req); err != nil {
@@ -44,4 +36,39 @@ func (p *PetService) CreatePet(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(response)
+}
+
+func (p *PetService) GetAllPetBreeds(c *fiber.Ctx) error {
+	petBreeds := p.repo.GetAllPetBreeds()
+	return c.JSON(petBreeds)
+}
+
+func (p *PetService) GetAllPetAggressionLevels(c *fiber.Ctx) error {
+	petAggressionLevels := p.repo.GetAllPetAggressionLevels()
+	return c.JSON(petAggressionLevels)
+}
+
+func (p *PetService) GetAllPetAllergies(c *fiber.Ctx) error {
+	petAllergies := p.repo.GetAllPetAllergies()
+	return c.JSON(petAllergies)
+}
+
+func (p *PetService) GetAllPetBehaviors(c *fiber.Ctx) error {
+	petBehaviors := p.repo.GetAllPetBehaviors()
+	return c.JSON(petBehaviors)
+}
+
+func (p *PetService) GetAllPetInteractions(c *fiber.Ctx) error {
+	petInteractions := p.repo.GetAllPetInteractions()
+	return c.JSON(petInteractions)
+}
+
+func (p *PetService) GetAllPetPersonalities(c *fiber.Ctx) error {
+	petPersonalities := p.repo.GetAllPetPersonalities()
+	return c.JSON(petPersonalities)
+}
+
+func (p *PetService) GetALlPetReactivities(c *fiber.Ctx) error {
+	petReactivities := p.repo.GetAllPetReactivities()
+	return c.JSON(petReactivities)
 }

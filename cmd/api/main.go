@@ -69,7 +69,13 @@ func (s *APIServer) Start() error {
 	petsSvc := pets.NewPetService(database.Pool)
 
 	petsRoutes := v1.Group("/pets")
+	petsRoutes.Get("/aggression-levels", petsSvc.GetAllPetAggressionLevels)
+	petsRoutes.Get("/allergies", petsSvc.GetAllPetAllergies)
 	petsRoutes.Get("/breeds", petsSvc.GetAllPetBreeds)
+	petsRoutes.Get("/behaviors", petsSvc.GetAllPetBehaviors)
+	petsRoutes.Get("/interactions", petsSvc.GetAllPetInteractions)
+	petsRoutes.Get("/personalities", petsSvc.GetAllPetPersonalities)
+	petsRoutes.Get("/reactivities", petsSvc.GetALlPetReactivities)
 	petsRoutes.Use(middleware.ValidateToken)
 	petsRoutes.Use(middleware.CurrentUserID(middleware.DBConfig{
 		UserRepo: usersRepo,
