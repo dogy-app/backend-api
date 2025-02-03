@@ -6,8 +6,11 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/dogy-app/backend-api/utils"
 )
 
 type UserService struct {
@@ -19,31 +22,18 @@ func NewUserService(db *pgxpool.Pool) *UserService {
 }
 
 func (s *UserService) GetUserByID(c *fiber.Ctx) error {
-	// if c.Params("id") != "" {
-	// 	c.Locals()
-	// }
-	// return c.JSON(fiber.Map{
-	// 	"externalID":    "user_2ruHSXCzfIRreR2tpttVQBl512a",
-	// 	"gender":        req.Gender,
-	// 	"hasOnboarded":  req.HasOnboarded,
-	// 	"name":          req.Name,
-	// 	"timezone":      req.Timezone,
-	// 	"notifications": req.Notifications,
-	// 	"subscription":  req.Subscription,
-	// })
-	return c.JSON(fiber.Map{
-		"externalId":   "user_2ruHSXCzfIRreR2tpttVQBl512a",
-		"gender":       "male",
-		"hasOnboarded": false,
-		"name":         "John Doe",
-		"timezone":     "Europe/Sweden",
-		"subscription": fiber.Map{
-			"isRegistered":     false,
-			"isTrialMode":      false,
-			"subscriptionType": "active",
-			"trialStartDate":   "2025-01-22",
-		},
-	})
+	ctx := context.Background()
+	internalID, ok := c.Locals(utils.AuthInternalID).(uuid.UUID)
+	if !ok {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get user ID.")
+	}
+
+	userResponse, err := s.repo.GetUser(ctx, internalID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get user.")
+	}
+
+	return c.JSON(userResponse)
 }
 
 func (s *UserService) CreateUser(c *fiber.Ctx) error {
@@ -52,8 +42,14 @@ func (s *UserService) CreateUser(c *fiber.Ctx) error {
 		return err
 	}
 
+	userID, ok := c.Locals(utils.AuthUserID).(string)
+	log.Println(userID)
+	if !ok {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get user ID.")
+	}
+
 	ctx := context.Background()
-	userResponse, err := s.repo.CreateUser(ctx, req, "user_2ruHSXCzfIRreR2tpttVQBl512a")
+	userResponse, err := s.repo.CreateUser(ctx, req, userID)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if ok := errors.As(err, &pgErr); ok {
@@ -69,7 +65,17 @@ func (s *UserService) CreateUser(c *fiber.Ctx) error {
 
 	log.Println(userResponse)
 	return c.JSON(userResponse)
-	// return c.JSON(fiber.Map{
-	// 	"externalId": "user_2ruHSXCzfIRreR2tpttVQBl512a",
-	// })
+}
+
+func (s *UserService) DeleteUser(c *fiber.Ctx) error {
+	ctx := context.Background()
+	internalID, ok := c.Locals(utils.AuthInternalID).(uuid.UUID)
+	if !ok {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get user ID.")
+	}
+	err := s.repo.DeleteUser(ctx, internalID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to delete user.")
+	}
+	return c.JSON(fiber.Map{"message": "User deleted successfully."})
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/dogy-app/backend-api/database/repository"
@@ -16,6 +17,49 @@ type UserRepository struct {
 
 func NewUserRepository(db *pgxpool.Pool) *UserRepository {
 	return &UserRepository{db: db}
+}
+
+func (r *UserRepository) GetInternalID(
+	ctx context.Context,
+	externalId string,
+) (uuid.UUID, error) {
+	repo := repository.New(r.db)
+	internalID, err := repo.GetInternalID(ctx, externalId)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+	return internalID, nil
+}
+
+func (r *UserRepository) GetUser(
+	ctx context.Context,
+	internalID uuid.UUID,
+) (CreateUserResponse, error) {
+	repo := repository.New(r.db)
+	user, err := repo.GetUserByID(ctx, internalID)
+	if err != nil {
+		return CreateUserResponse{}, err
+	}
+	return CreateUserResponse{
+		ExternalID: user.User.ExternalID,
+		CreateUserRequest: CreateUserRequest{
+			Name:         user.User.Name,
+			Gender:       string(user.User.Gender),
+			HasOnboarded: user.User.HasOnboarded,
+			Timezone:     user.User.Timezone,
+			Notifications: Notifications{
+				Enabled:         user.UserNotification.Enabled,
+				IsRegistered:    user.UserNotification.IsRegistered,
+				DailyEnabled:    user.UserNotification.DailyEnabled,
+				PlaytimeEnabled: user.UserNotification.PlaytimeEnabled,
+			},
+			Subscription: Subscription{
+				SubscriptionType: string(user.UserSubscription.SubscriptionType),
+				IsTrialMode:      user.UserSubscription.IsTrialMode,
+				TrialStartDate:   user.UserSubscription.TrialStartDate.Format("2006-01-02"),
+			},
+		},
+	}, nil
 }
 
 func (r *UserRepository) CreateUser(
@@ -94,4 +138,16 @@ func (r *UserRepository) CreateUser(
 			},
 		},
 	}, nil
+}
+
+func (r *UserRepository) DeleteUser(
+	ctx context.Context,
+	internalID uuid.UUID,
+) error {
+	repo := repository.New(r.db)
+	err := repo.DeleteUser(ctx, internalID)
+	if err != nil {
+		return err
+	}
+	return nil
 }
