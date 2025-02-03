@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"crypto/rsa"
 	"fmt"
 	"log"
@@ -10,6 +11,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+
+	"github.com/dogy-app/backend-api/services/users"
+	"github.com/dogy-app/backend-api/utils"
 )
 
 const (
@@ -23,11 +28,11 @@ type ClerkAuthClaims struct {
 	jwt.RegisteredClaims
 }
 
-func safeDereference(s *string) *string {
+func safeDereference(s *string) string {
 	if s == nil {
-		return nil
+		return ""
 	}
-	return s
+	return *s
 }
 
 func importPublicKey(path string) (*rsa.PublicKey, error) {
@@ -88,13 +93,6 @@ func validateHeader(header string) (string, error) {
 	return authToken[1], nil
 }
 
-type keyType struct{}
-
-var (
-	AuthUserId   keyType
-	AuthUserRole keyType
-)
-
 // ValidateToken
 func ValidateToken(c *fiber.Ctx) error {
 	log.Println("Validating token...")
@@ -116,9 +114,59 @@ func ValidateToken(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, ErrMsgInvalidToken)
 	}
 
-	c.Locals(AuthUserId, authClaims.Subject)
-	c.Locals(AuthUserRole, safeDereference(authClaims.Role))
+	c.Locals(utils.AuthUserID, authClaims.Subject)
+	c.Locals(utils.AuthRole, safeDereference(authClaims.Role))
 
+	log.Println(authClaims.Subject)
+	log.Println(safeDereference(authClaims.Role))
 	slog.Debug("Token validated.")
 	return c.Next()
+}
+
+type DBConfig struct {
+	UserRepo *users.UserRepository
+}
+
+func CurrentUserID(config DBConfig) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		userID, ok := c.Locals(utils.AuthUserID).(string)
+		role, _ := c.Locals(utils.AuthUserID).(string)
+		log.Println("User ID: ", userID)
+		log.Println("User Role: ", role)
+
+		if !ok {
+			return fiber.NewError(
+				fiber.StatusNotFound,
+				"User internal ID not found. Invalid JWT Token.",
+			)
+		}
+		ctx := context.Background()
+		paramsId := c.Params("id")
+
+		var internalID uuid.UUID
+		var err error
+		if paramsId != "" {
+			_internalID, _err := config.UserRepo.GetInternalID(ctx, paramsId)
+			internalID = _internalID
+			err = _err
+		} else {
+			_internalID, _err := config.UserRepo.GetInternalID(ctx, userID)
+			internalID = _internalID
+			err = _err
+		}
+
+		if internalID == uuid.Nil {
+			return fiber.NewError(
+				fiber.StatusNotFound,
+				"User internal ID not found on the database.",
+			)
+		}
+
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "Failed to get user ID.")
+		}
+
+		c.Locals(utils.AuthInternalID, internalID)
+		return c.Next()
+	}
 }
