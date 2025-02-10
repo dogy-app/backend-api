@@ -18,13 +18,14 @@ type (
 		IsSterilized     bool                            `json:"isSterilized"`
 	}
 	CreatePetRequest struct {
-		Name       string            `json:"name"`
-		Birthday   string            `json:"birthday"`
-		PhotoURL   string            `json:"photoUrl"`
-		Gender     repository.Gender `json:"gender"`
-		Size       string            `json:"size"`
-		Weight     string            `json:"weight"`
-		Attributes PetAttr           `json:"attributes"`
+		Name       string                `json:"name"`
+		Birthday   string                `json:"birthday"`
+		PhotoURL   string                `json:"photoUrl"`
+		Gender     repository.Gender     `json:"gender"`
+		Size       string                `json:"size"`
+		Weight     string                `json:"weight"`
+		WeightUnit repository.WeightUnit `json:"weightUnit"`
+		Attributes PetAttr               `json:"attributes"`
 		UserPetLink
 	}
 	CreatePetResponse struct {

@@ -75,11 +75,13 @@ func (s *APIServer) Start() error {
 	petsRoutes.Get("/behaviors", petsSvc.GetAllPetBehaviors)
 	petsRoutes.Get("/interactions", petsSvc.GetAllPetInteractions)
 	petsRoutes.Get("/personalities", petsSvc.GetAllPetPersonalities)
-	petsRoutes.Get("/reactivities", petsSvc.GetALlPetReactivities)
+	petsRoutes.Get("/reactivities", petsSvc.GetAllPetReactivities)
+	petsRoutes.Delete("/:id", petsSvc.DeletePet)
 	petsRoutes.Use(middleware.ValidateToken)
 	petsRoutes.Use(middleware.CurrentUserID(middleware.DBConfig{
 		UserRepo: usersRepo,
 	}))
+	// petsRoutes.Get("/:id?", petsSvc.GetAllPetsByUser)
 	petsRoutes.Post("/:id?", petsSvc.CreatePet)
 
 	if err := app.Listen(fmt.Sprintf(":%s", s.addr)); err != http.ErrServerClosed {
