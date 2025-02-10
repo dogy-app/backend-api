@@ -1,13 +1,17 @@
-FROM python:3.12
+FROM golang:1.23-alpine AS build
 
 WORKDIR /app
 
-RUN pip install uv
+COPY go.mod go.sum ./
+RUN go mod download
 
 COPY . .
 
-RUN uv install
+RUN go build -o main cmd/main.go
 
-EXPOSE 8000
+FROM alpine:3.20.1 AS prod
+WORKDIR /app
+COPY --from=build /app/main /app/main
+EXPOSE 8080
 
-CMD ["fastapi", "run", "app/main.py", "--port", "8000"]
+ENTRYPOINT [ "./main" ]

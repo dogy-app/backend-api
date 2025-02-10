@@ -1,0 +1,7 @@
+# deps
+.env.*
+.env
+*.pem
+tmp/
+air.toml
+.github/
