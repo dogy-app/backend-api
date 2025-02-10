@@ -8,8 +8,10 @@ import (
 )
 
 type Config struct {
-	Port        string
-	DatabaseURI string
+	AppEnvironment string
+	Port           string
+	DatabaseURI    string
+	ClerkJWTCert   string
 }
 
 func getEnv(key, fallback string) string {
@@ -28,12 +30,24 @@ func getEnvRequired(key string) string {
 	return ""
 }
 
+// func loadProductionSecrets() Config {
+//     return Config{
+//         AppEnvironment: getEnv("APP_ENVIRONMENT", "production"),
+//         Port:           getEnv("PORT", "8080"),
+//     }
+// }
+
 var Env = initConfig()
 
 func initConfig() Config {
 	godotenv.Load()
+	// if getEnv("APP_ENVIRONMENT", "development") == "production" {
+	//     return loadProductionSecrets()
+	// }
 	return Config{
-		Port:        getEnv("PORT", "8080"),
-		DatabaseURI: getEnvRequired("DATABASE_CONNECTION_STRING"),
+		AppEnvironment: getEnv("APP_ENVIRONMENT", "development"),
+		Port:           getEnv("PORT", "8080"),
+		DatabaseURI:    getEnvRequired("DATABASE_CONNECTION_STRING"),
+		ClerkJWTCert:   getEnvRequired("CLERK_JWT_CERT"),
 	}
 }

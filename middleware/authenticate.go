@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
-	"os"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
+	"github.com/dogy-app/backend-api/config"
 	"github.com/dogy-app/backend-api/services/users"
 	"github.com/dogy-app/backend-api/utils"
 )
@@ -35,12 +35,8 @@ func safeDereference(s *string) string {
 	return *s
 }
 
-func importPublicKey(path string) (*rsa.PublicKey, error) {
-	publicKeyFile, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("Error opening public key file: %v", err)
-	}
-	key, err := jwt.ParseRSAPublicKeyFromPEM(publicKeyFile)
+func importPublicKey(publicKeyStr string) (*rsa.PublicKey, error) {
+	key, err := jwt.ParseRSAPublicKeyFromPEM([]byte(publicKeyStr))
 	if err != nil {
 		return nil, fmt.Errorf("Error parsing public key: %v", err)
 	}
@@ -104,7 +100,7 @@ func ValidateToken(c *fiber.Ctx) error {
 		return err
 	}
 
-	publicKey, err := importPublicKey("public_key.pem")
+	publicKey, err := importPublicKey(config.Env.ClerkJWTCert)
 	if err != nil {
 		slog.Error("Error importing public key.")
 	}
@@ -115,10 +111,10 @@ func ValidateToken(c *fiber.Ctx) error {
 	}
 
 	c.Locals(utils.AuthUserID, authClaims.Subject)
-	c.Locals(utils.AuthRole, safeDereference(authClaims.Role))
+	// c.Locals(utils.AuthRole, safeDereference(authClaims.Role))
 
 	log.Println(authClaims.Subject)
-	log.Println(safeDereference(authClaims.Role))
+	// log.Println(safeDereference(authClaims.Role))
 	slog.Debug("Token validated.")
 	return c.Next()
 }
@@ -130,9 +126,9 @@ type DBConfig struct {
 func CurrentUserID(config DBConfig) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userID, ok := c.Locals(utils.AuthUserID).(string)
-		role, _ := c.Locals(utils.AuthUserID).(string)
+		// role, _ := c.Locals(utils.AuthUserID).(string)
 		log.Println("User ID: ", userID)
-		log.Println("User Role: ", role)
+		// log.Println("User Role: ", role)
 
 		if !ok {
 			return fiber.NewError(
