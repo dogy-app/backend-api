@@ -14,16 +14,17 @@ import (
 )
 
 const createBasePet = `-- name: CreateBasePet :one
-INSERT INTO pets (name, birthday, photo_url, gender, size, weight) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at, updated_at, name, birthday, photo_url, gender, size, weight
+INSERT INTO pets (name, birthday, photo_url, gender, size, weight, weight_unit) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at, updated_at, name, birthday, photo_url, gender, size, weight, weight_unit
 `
 
 type CreateBasePetParams struct {
-	Name     string          `json:"name"`
-	Birthday time.Time       `json:"birthday"`
-	PhotoUrl string          `json:"photoUrl"`
-	Gender   Gender          `json:"gender"`
-	Size     PetSize         `json:"size"`
-	Weight   decimal.Decimal `json:"weight"`
+	Name       string          `json:"name"`
+	Birthday   time.Time       `json:"birthday"`
+	PhotoUrl   string          `json:"photoUrl"`
+	Gender     Gender          `json:"gender"`
+	Size       PetSize         `json:"size"`
+	Weight     decimal.Decimal `json:"weight"`
+	WeightUnit WeightUnit      `json:"weightUnit"`
 }
 
 func (q *Queries) CreateBasePet(ctx context.Context, arg CreateBasePetParams) (Pet, error) {
@@ -34,6 +35,7 @@ func (q *Queries) CreateBasePet(ctx context.Context, arg CreateBasePetParams) (P
 		arg.Gender,
 		arg.Size,
 		arg.Weight,
+		arg.WeightUnit,
 	)
 	var i Pet
 	err := row.Scan(
@@ -46,6 +48,7 @@ func (q *Queries) CreateBasePet(ctx context.Context, arg CreateBasePetParams) (P
 		&i.Gender,
 		&i.Size,
 		&i.Weight,
+		&i.WeightUnit,
 	)
 	return i, err
 }
@@ -162,6 +165,129 @@ type CreatePetAttrReactivitiesParams struct {
 func (q *Queries) CreatePetAttrReactivities(ctx context.Context, arg CreatePetAttrReactivitiesParams) error {
 	_, err := q.db.Exec(ctx, createPetAttrReactivities, arg.PetAttrID, arg.Reactivity)
 	return err
+}
+
+const deletePetByID = `-- name: DeletePetByID :exec
+DELETE FROM pets WHERE id = $1
+`
+
+func (q *Queries) DeletePetByID(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deletePetByID, id)
+	return err
+}
+
+const getAllPetsFromUser = `-- name: GetAllPetsFromUser :many
+SELECT
+    attr.pet_id,
+    attr.is_sterilized,
+    COALESCE(breeds.breeds, '{}') AS breeds,
+    COALESCE(aggression_levels.aggression_levels, '{}') AS aggression_levels,
+    COALESCE(allergies.allergies, '{}') AS allergies,
+    COALESCE(behaviors.behaviors, '{}') AS behaviors,
+    COALESCE(interactions.interactions, '{}') AS interactions,
+    COALESCE(personalities.personalities, '{}') AS personalities,
+    COALESCE(reactivities.reactivities, '{}') AS reactivities
+FROM pet_attrs attr
+LEFT JOIN LATERAL (
+    SELECT ARRAY_AGG(breed) AS breeds
+    FROM pet_attr_breeds
+    WHERE pet_attr_id = attr.id
+) breeds ON true
+LEFT JOIN LATERAL (
+    SELECT ARRAY_AGG(aggression_level) AS aggression_levels
+    FROM pet_attr_aggression_levels
+    WHERE pet_attr_id = attr.id
+) aggression_levels ON true
+LEFT JOIN LATERAL (
+    SELECT ARRAY_AGG(allergy) AS allergies
+    FROM pet_attr_allergies
+    WHERE pet_attr_id = attr.id
+) allergies ON true
+LEFT JOIN LATERAL (
+    SELECT ARRAY_AGG(behavior) AS behaviors
+    FROM pet_attr_behaviors
+    WHERE pet_attr_id = attr.id
+) behaviors ON true
+LEFT JOIN LATERAL (
+    SELECT ARRAY_AGG(interaction) AS interactions
+    FROM pet_attr_interactions
+    WHERE pet_attr_id = attr.id
+) interactions ON true
+LEFT JOIN LATERAL (
+    SELECT ARRAY_AGG(personality) AS personalities
+    FROM pet_attr_personalities
+    WHERE pet_attr_id = attr.id
+) personalities ON true
+LEFT JOIN LATERAL (
+    SELECT ARRAY_AGG(reactivity) AS reactivities
+    FROM pet_attr_reactivities
+    WHERE pet_attr_id = attr.id
+) reactivities ON true
+WHERE pet_id IN (SELECT pet_id FROM users_pets_link WHERE user_id = $1)
+`
+
+type GetAllPetsFromUserRow struct {
+	PetID            uuid.UUID   `json:"petID"`
+	IsSterilized     bool        `json:"isSterilized"`
+	Breeds           interface{} `json:"breeds"`
+	AggressionLevels interface{} `json:"aggressionLevels"`
+	Allergies        interface{} `json:"allergies"`
+	Behaviors        interface{} `json:"behaviors"`
+	Interactions     interface{} `json:"interactions"`
+	Personalities    interface{} `json:"personalities"`
+	Reactivities     interface{} `json:"reactivities"`
+}
+
+func (q *Queries) GetAllPetsFromUser(ctx context.Context, userID uuid.UUID) ([]GetAllPetsFromUserRow, error) {
+	rows, err := q.db.Query(ctx, getAllPetsFromUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllPetsFromUserRow
+	for rows.Next() {
+		var i GetAllPetsFromUserRow
+		if err := rows.Scan(
+			&i.PetID,
+			&i.IsSterilized,
+			&i.Breeds,
+			&i.AggressionLevels,
+			&i.Allergies,
+			&i.Behaviors,
+			&i.Interactions,
+			&i.Personalities,
+			&i.Reactivities,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getPetByID = `-- name: GetPetByID :one
+SELECT id, created_at, updated_at, name, birthday, photo_url, gender, size, weight, weight_unit FROM pets WHERE id = $1
+`
+
+func (q *Queries) GetPetByID(ctx context.Context, id uuid.UUID) (Pet, error) {
+	row := q.db.QueryRow(ctx, getPetByID, id)
+	var i Pet
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Birthday,
+		&i.PhotoUrl,
+		&i.Gender,
+		&i.Size,
+		&i.Weight,
+		&i.WeightUnit,
+	)
+	return i, err
 }
 
 const linkPetToUser = `-- name: LinkPetToUser :exec
