@@ -39,12 +39,13 @@ func (r *PetRepository) CreatePet(
 		return CreatePetResponse{}, err
 	}
 	petBase, err := repo.CreateBasePet(ctx, repository.CreateBasePetParams{
-		Name:     pet.Name,
-		Birthday: birthday,
-		PhotoUrl: pet.PhotoURL,
-		Size:     repository.PetSize(pet.Size),
-		Gender:   pet.Gender,
-		Weight:   weight,
+		Name:       pet.Name,
+		Birthday:   birthday,
+		PhotoUrl:   pet.PhotoURL,
+		Size:       repository.PetSize(pet.Size),
+		Gender:     pet.Gender,
+		Weight:     weight,
+		WeightUnit: repository.WeightUnit(pet.WeightUnit),
 	})
 	if err != nil {
 		return CreatePetResponse{}, err
@@ -155,6 +156,36 @@ func (r *PetRepository) CreatePet(
 			Attributes:  pet.Attributes,
 		},
 	}, nil
+}
+
+// func (r *PetRepository) GetAllPetsByUser(
+// 	ctx context.Context,
+// 	userId uuid.UUID,
+// ) ([]CreatePetResponse, error) {
+// 	repo := repository.New(r.db)
+//
+// 	pets, err := repo.GetAllPetsFromUser(ctx, userId)
+// 	if err != nil {
+// 		return []CreatePetResponse{}, err
+// 	}
+//     var petResponses []CreatePetResponse
+//     for pet := range pets {
+//         petResponses = append(petResponses, CreatePetResponse{
+//             PetID: pet.PetID,
+//             CreatePetRequest: CreatePetRequest{
+//             }
+//         }
+//     }
+// 	return pets, err
+// }
+
+func (r *PetRepository) DeletePetById(ctx context.Context, id uuid.UUID) error {
+	repo := repository.New(r.db)
+	err := repo.DeletePetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *PetRepository) GetAllPetBreeds() []repository.PetBreed {
