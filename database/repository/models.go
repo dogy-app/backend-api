@@ -1906,16 +1906,75 @@ func AllSubscriptionTypeValues() []SubscriptionType {
 	}
 }
 
+type WeightUnit string
+
+const (
+	WeightUnitKg  WeightUnit = "kg"
+	WeightUnitLbs WeightUnit = "lbs"
+)
+
+func (e *WeightUnit) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = WeightUnit(s)
+	case string:
+		*e = WeightUnit(s)
+	default:
+		return fmt.Errorf("unsupported scan type for WeightUnit: %T", src)
+	}
+	return nil
+}
+
+type NullWeightUnit struct {
+	WeightUnit WeightUnit `json:"weightUnit"`
+	Valid      bool       `json:"valid"` // Valid is true if WeightUnit is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullWeightUnit) Scan(value interface{}) error {
+	if value == nil {
+		ns.WeightUnit, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.WeightUnit.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullWeightUnit) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.WeightUnit), nil
+}
+
+func (e WeightUnit) Valid() bool {
+	switch e {
+	case WeightUnitKg,
+		WeightUnitLbs:
+		return true
+	}
+	return false
+}
+
+func AllWeightUnitValues() []WeightUnit {
+	return []WeightUnit{
+		WeightUnitKg,
+		WeightUnitLbs,
+	}
+}
+
 type Pet struct {
-	ID        uuid.UUID        `json:"id"`
-	CreatedAt pgtype.Timestamp `json:"createdAt"`
-	UpdatedAt pgtype.Timestamp `json:"updatedAt"`
-	Name      string           `json:"name"`
-	Birthday  time.Time        `json:"birthday"`
-	PhotoUrl  string           `json:"photoUrl"`
-	Gender    Gender           `json:"gender"`
-	Size      PetSize          `json:"size"`
-	Weight    decimal.Decimal  `json:"weight"`
+	ID         uuid.UUID        `json:"id"`
+	CreatedAt  pgtype.Timestamp `json:"createdAt"`
+	UpdatedAt  pgtype.Timestamp `json:"updatedAt"`
+	Name       string           `json:"name"`
+	Birthday   time.Time        `json:"birthday"`
+	PhotoUrl   string           `json:"photoUrl"`
+	Gender     Gender           `json:"gender"`
+	Size       PetSize          `json:"size"`
+	Weight     decimal.Decimal  `json:"weight"`
+	WeightUnit WeightUnit       `json:"weightUnit"`
 }
 
 type PetAttr struct {
