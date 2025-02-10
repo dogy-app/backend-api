@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createBaseUser = `-- name: CreateBaseUser :one
@@ -166,4 +167,120 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow
 		&i.UserNotification.PlaytimeEnabled,
 	)
 	return i, err
+}
+
+const updateBaseUser = `-- name: UpdateBaseUser :exec
+UPDATE users
+SET
+    name = COALESCE($1, name),
+    external_id = COALESCE($2, external_id),
+    timezone = COALESCE($3, timezone),
+    gender = COALESCE($4, gender),
+    has_onboarded = COALESCE($5, has_onboarded)
+WHERE id = $6
+`
+
+type UpdateBaseUserParams struct {
+	Name         pgtype.Text `json:"name"`
+	ExternalID   pgtype.Text `json:"externalID"`
+	Timezone     pgtype.Text `json:"timezone"`
+	Gender       NullGender  `json:"gender"`
+	HasOnboarded pgtype.Bool `json:"hasOnboarded"`
+	ID           uuid.UUID   `json:"id"`
+}
+
+func (q *Queries) UpdateBaseUser(ctx context.Context, arg UpdateBaseUserParams) error {
+	_, err := q.db.Exec(ctx, updateBaseUser,
+		arg.Name,
+		arg.ExternalID,
+		arg.Timezone,
+		arg.Gender,
+		arg.HasOnboarded,
+		arg.ID,
+	)
+	return err
+}
+
+const updateUserNotifications = `-- name: UpdateUserNotifications :exec
+UPDATE user_notifications
+SET
+    enabled = COALESCE($1, enabled),
+    is_registered = COALESCE($2, is_registered),
+    daily_enabled = COALESCE($3, daily_enabled),
+    playtime_enabled = COALESCE($4, playtime_enabled)
+WHERE id = $5
+`
+
+type UpdateUserNotificationsParams struct {
+	Enabled         pgtype.Bool `json:"enabled"`
+	IsRegistered    pgtype.Bool `json:"isRegistered"`
+	DailyEnabled    pgtype.Bool `json:"dailyEnabled"`
+	PlaytimeEnabled pgtype.Bool `json:"playtimeEnabled"`
+	ID              uuid.UUID   `json:"id"`
+}
+
+func (q *Queries) UpdateUserNotifications(ctx context.Context, arg UpdateUserNotificationsParams) error {
+	_, err := q.db.Exec(ctx, updateUserNotifications,
+		arg.Enabled,
+		arg.IsRegistered,
+		arg.DailyEnabled,
+		arg.PlaytimeEnabled,
+		arg.ID,
+	)
+	return err
+}
+
+const updateUserPetLink = `-- name: UpdateUserPetLink :exec
+UPDATE users_pets_link
+SET
+    is_dog_owner = COALESCE($1, is_dog_owner),
+    is_dog_sitter = COALESCE($2, is_dog_sitter),
+    user_id = COALESCE($3, user_id),
+    pet_id = COALESCE($4, pet_id)
+WHERE id = $5
+`
+
+type UpdateUserPetLinkParams struct {
+	IsDogOwner  pgtype.Bool `json:"isDogOwner"`
+	IsDogSitter pgtype.Bool `json:"isDogSitter"`
+	UserID      pgtype.UUID `json:"userID"`
+	PetID       pgtype.UUID `json:"petID"`
+	ID          uuid.UUID   `json:"id"`
+}
+
+func (q *Queries) UpdateUserPetLink(ctx context.Context, arg UpdateUserPetLinkParams) error {
+	_, err := q.db.Exec(ctx, updateUserPetLink,
+		arg.IsDogOwner,
+		arg.IsDogSitter,
+		arg.UserID,
+		arg.PetID,
+		arg.ID,
+	)
+	return err
+}
+
+const updateUserSubscription = `-- name: UpdateUserSubscription :exec
+UPDATE user_subscriptions
+SET
+    trial_start_date = COALESCE($1, trial_start_date),
+    subscription_type = COALESCE($2, subscription_type),
+    is_trial_mode = COALESCE($3, is_trial_mode)
+WHERE id = $4
+`
+
+type UpdateUserSubscriptionParams struct {
+	TrialStartDate   pgtype.Date          `json:"trialStartDate"`
+	SubscriptionType NullSubscriptionType `json:"subscriptionType"`
+	IsTrialMode      pgtype.Bool          `json:"isTrialMode"`
+	ID               uuid.UUID            `json:"id"`
+}
+
+func (q *Queries) UpdateUserSubscription(ctx context.Context, arg UpdateUserSubscriptionParams) error {
+	_, err := q.db.Exec(ctx, updateUserSubscription,
+		arg.TrialStartDate,
+		arg.SubscriptionType,
+		arg.IsTrialMode,
+		arg.ID,
+	)
+	return err
 }

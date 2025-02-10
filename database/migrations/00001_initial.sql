@@ -1,5 +1,26 @@
 -- +goose Up
 -- +goose StatementBegin
+-- Auth and database setup
+
+-- +goose envsub on
+CREATE ROLE app_user WITH LOGIN PASSWORD '${APP_USER_PASSWORD}';
+
+GRANT CONNECT ON DATABASE "${DB_NAME}" TO app_user;
+GRANT USAGE ON SCHEMA public TO app_user;
+-- +goose envsub off
+
+-- Allow SELECT, INSERT, UPDATE, and DELETE on all tables
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_user;
+
+-- Ensure new tables automatically get the same privileges
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_user;
+
+-- Allow usage on sequences
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT USAGE, SELECT ON SEQUENCES TO app_user;
+
 -- UUID v7 from https://gist.github.com/kjmph/5bd772b2c2df145aa645b837da7eca74
 CREATE OR REPLACE FUNCTION UUID_GENERATE_V7()
 RETURNS UUID
@@ -43,6 +64,7 @@ CREATE TYPE "public"."pet_reactivity" AS ENUM('Non-reactive', 'Reactive to stran
 CREATE TYPE "public"."pet_size" AS ENUM('small', 'medium', 'large');--> statement-breakpoint
 CREATE TYPE "public"."subscription_type" AS ENUM('active', 'inactive', 'unknown');--> statement-breakpoint
 CREATE TYPE "public"."place_category" AS ENUM('dog park', 'misc');
+CREATE TYPE "public"."weight_unit" AS ENUM('kg', 'lbs');
 
 CREATE TABLE IF NOT EXISTS "users" (
     "id" UUID PRIMARY KEY DEFAULT UUID_GENERATE_V7(),
@@ -89,7 +111,8 @@ CREATE TABLE IF NOT EXISTS "pets" (
     "photo_url" TEXT NOT NULL,
     "gender" "gender" NOT NULL,
     "size" "pet_size" NOT NULL,
-    "weight" NUMERIC(5,2) NOT NULL
+    "weight" NUMERIC(5,2) NOT NULL,
+    "weight_unit" "weight_unit" NOT NULL
 );
 
 CREATE TRIGGER trigger_set_updated_at_on_pets
@@ -219,6 +242,7 @@ DROP TABLE IF EXISTS "user_notifications";
 DROP TRIGGER IF EXISTS trigger_set_updated_at_on_users ON "users";
 DROP TABLE IF EXISTS "users";
 
+DROP TYPE IF EXISTS "public"."weight_unit";
 DROP TYPE IF EXISTS "public"."place_category";
 DROP TYPE IF EXISTS "public"."subscription_type";
 DROP TYPE IF EXISTS "public"."pet_size";
@@ -234,4 +258,24 @@ DROP TYPE IF EXISTS "public"."gender";
 DROP EXTENSION IF EXISTS "postgis";
 DROP FUNCTION set_updated_at();
 DROP FUNCTION uuid_generate_v7();
+-- Revoke usage on sequences
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+REVOKE USAGE, SELECT ON SEQUENCES FROM app_user;
+REVOKE USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public FROM app_user;
+
+-- Revoke privileges on tables
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+REVOKE SELECT, INSERT, UPDATE, DELETE ON TABLES FROM app_user;
+REVOKE SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public FROM app_user;
+
+-- Revoke usage on schema
+REVOKE USAGE ON SCHEMA public FROM app_user;
+
+-- Revoke connect on database
+-- +goose envsub on
+REVOKE CONNECT ON DATABASE "${DB_NAME}" FROM app_user;
+-- +goose envsub off
+
+-- Drop the role
+DROP ROLE app_user;
 -- +goose StatementEnd
