@@ -3,9 +3,9 @@ import { serve } from "bun";
 import app from "./app";
 import env from "./env";
 
-const port = env?.PORT;
-
-serve({
-	fetch: app.fetch,
-	port,
+app.listen({
+	port: 3000,
+	hostname: "localhost",
+	development: true,
+	reusePort: true,
 });

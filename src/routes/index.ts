@@ -1,38 +1,28 @@
-import { createRoute, z } from "@hono/zod-openapi";
-import * as HttpStatusCodes from "stoker/http-status-codes";
-import { jsonContent } from "stoker/openapi/helpers";
+import { Elysia, t } from "elysia";
+import userRoutes from "./users/users.index";
 
-import { createRouter } from "@/lib/create-app";
-
-const healthyResponse = z
-	.object({
-		message: z
-			.string()
-			.describe("A message to indicate the health of the service."),
+const apiRoutes = new Elysia()
+	.model({
+		"healthcheck.v1": t.Object({
+			message: t.String({
+				description: "Message if the endpoint for v1 is running",
+				example: "Welcome to Dogy API v1",
+			}),
+		}),
 	})
-	.openapi({
-		example: {
-			message: "Healthy",
-		},
-	});
-
-const router = createRouter().openapi(
-	createRoute({
-		tags: ["Index"],
-		method: "get",
-		path: "/",
-		responses: {
-			[HttpStatusCodes.OK]: jsonContent(healthyResponse, "Healthy Response"),
-		},
-	}),
-	(c) => {
-		return c.json(
-			{
-				message: "Healthy",
+	.get(
+		"/",
+		() => ({
+			message: "Welcome to Dogy API v1",
+		}),
+		{
+			detail: {
+				summary: "Health check for v1",
 			},
-			HttpStatusCodes.OK,
-		);
-	},
-);
+			response: "healthcheck.v1",
+			tags: ["Health check"],
+		},
+	)
+	.use(userRoutes);
 
-export default router;
+export default apiRoutes;

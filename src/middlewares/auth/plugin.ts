@@ -1,13 +1,16 @@
 import env from "@/env";
+import {
+	RequiresRolePrivilegeError,
+	registerAuthErrors,
+} from "@/lib/errors/auth";
 import jwt from "@elysiajs/jwt";
 import { Elysia } from "elysia";
-import { RequiresRolePrivilegeError, registerAuthErrors } from "./auth.errors";
-import { retrieveDataFromPayload } from "./auth.handlers";
+import { retrieveDataFromPayload } from "./handlers";
 
 const authPlugin = new Elysia({ name: "auth/plugin" })
 	.use(jwt({ name: "jwt", secret: env.CLERK_SECRET_KEY }))
 	.use(registerAuthErrors)
-	.derive({ as: "scoped" }, async ({ headers }) => {
+	.derive(async ({ headers }) => {
 		const { role, userId } = await retrieveDataFromPayload(headers);
 		return { role, userId };
 	})
@@ -19,6 +22,7 @@ const authPlugin = new Elysia({ name: "auth/plugin" })
 				},
 			};
 		},
-	});
+	})
+	.as("plugin");
 
 export default authPlugin;

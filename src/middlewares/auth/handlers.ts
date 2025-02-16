@@ -1,14 +1,13 @@
 import env from "@/env";
-import { DogyAPIException } from "@/lib/error";
-import { Role } from "@/lib/types";
-import type { HTTPHeaders } from "elysia/dist/types";
-import { JWSInvalid, importSPKI, jwtVerify } from "jose";
 import {
 	EmptyCredentialsError,
 	InvalidAuthenticationType,
 	InvalidCredentialsError,
-} from "./auth.errors";
-import type { ClerkJWTPayload } from "./auth.models";
+} from "@/lib/errors/auth";
+import { DogyAPIException } from "@/lib/errors/core";
+import { Role } from "@/lib/types";
+import { JWSInvalid, importSPKI, jwtVerify } from "jose";
+import type { ClerkJWTPayload } from "./models";
 
 export async function verifyClerkJWT(token: string) {
 	try {

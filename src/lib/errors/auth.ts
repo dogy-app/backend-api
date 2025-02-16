@@ -1,12 +1,12 @@
-import { DogyAPIException } from "@/lib/error";
-import HTTPStatusCode from "@/lib/status-codes";
+import { UNAUTHORIZED } from "@/lib/status-codes";
 import { Elysia } from "elysia";
+import { DogyAPIException } from "./core";
 
 export class InvalidCredentialsError extends DogyAPIException {
 	constructor() {
 		super("Invalid credentials. Please provide a valid token.");
 		this.name = "InvalidCredentialsError";
-		this.statusCode = HTTPStatusCode.UNAUTHORIZED;
+		this.statusCode = UNAUTHORIZED;
 
 		Object.setPrototypeOf(this, InvalidCredentialsError.prototype);
 	}
@@ -16,7 +16,7 @@ export class EmptyCredentialsError extends DogyAPIException {
 	constructor() {
 		super("Empty credentials. Please provide a valid token.");
 		this.name = "EmptyCredentialsError";
-		this.statusCode = HTTPStatusCode.UNAUTHORIZED;
+		this.statusCode = UNAUTHORIZED;
 
 		Object.setPrototypeOf(this, EmptyCredentialsError.prototype);
 	}
@@ -28,7 +28,7 @@ export class InvalidAuthenticationType extends DogyAPIException {
 			"Invalid authentication type. Authentication type must be Bearer token.",
 		);
 		this.name = "InvalidAuthenticationType";
-		this.statusCode = HTTPStatusCode.UNAUTHORIZED;
+		this.statusCode = UNAUTHORIZED;
 
 		Object.setPrototypeOf(this, InvalidAuthenticationType.prototype);
 	}
@@ -38,7 +38,7 @@ export class RequiresRolePrivilegeError extends DogyAPIException {
 	constructor() {
 		super("You do not have the required role to access this resource.");
 		this.name = "RequiresRolePrivilegeError";
-		this.statusCode = HTTPStatusCode.UNAUTHORIZED;
+		this.statusCode = UNAUTHORIZED;
 
 		Object.setPrototypeOf(this, RequiresRolePrivilegeError.prototype);
 	}

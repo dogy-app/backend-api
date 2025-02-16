@@ -4,9 +4,6 @@ import { t } from "elysia";
 const baseErrorResponse = t.Object({
 	name: t.String(),
 	message: t.String(),
-});
-
-export type ErrorResponse = typeof baseErrorResponse.static;
 
 export class DogyAPIException extends Error {
 	public statusCode: number = INTERNAL_SERVER_ERROR;
