@@ -1,4 +1,4 @@
-export { default as user } from "./user";
+export { default as user, userRelations } from "./user";
 export { default as userSubscription } from "./userSubscription";
 export { default as pet } from "./pet";
 export {

@@ -1,6 +1,6 @@
 import { v7 } from "uuid";
 
-import { relations } from "drizzle-orm";
+import { like, relations } from "drizzle-orm";
 import {
 	boolean,
 	pgTable,
@@ -8,20 +8,21 @@ import {
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import pet from "./pet";
 import { gender } from "./types";
 import userSubscription from "./userSubscription";
 
 const user = pgTable("users", {
 	id: uuid().primaryKey().$defaultFn(v7),
-	updatedAt: timestamp()
-		.$defaultFn(() => new Date())
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
 		.$onUpdateFn(() => new Date()),
-	externalId: varchar({ length: 32 }).unique().notNull(),
+	externalId: varchar("external_id", { length: 32 }).unique().notNull(),
 	name: varchar({ length: 255 }).notNull(),
 	timezone: varchar({ length: 30 }).notNull(),
 	gender: gender().notNull(),
-	hasOnboarded: boolean().default(false),
+	hasOnboarded: boolean("has_onboarded").default(false),
 });
 
 export const userRelations = relations(user, ({ one, many }) => ({
@@ -32,9 +33,19 @@ export const userRelations = relations(user, ({ one, many }) => ({
 	pets: many(pet),
 }));
 
-export const table = {
-	user,
-} as const;
+export const selectUserSchema = createSelectSchema(user).omit({
+	id: true,
+	updatedAt: true,
+});
+export const insertUserSchema = createInsertSchema(user);
 
-export type Table = typeof table;
+const userSubscriptionSchema = createSelectSchema(userSubscription);
+
+export const selectFullUserSchema = selectUserSchema.extend({
+	subscription: userSubscriptionSchema.omit({
+		id: true,
+		userId: true,
+	}),
+});
+
 export default user;
