@@ -1,6 +1,6 @@
 import { v7 } from "uuid";
 
-import { relations } from "drizzle-orm";
+import { like, relations } from "drizzle-orm";
 import {
 	boolean,
 	pgTable,
@@ -8,8 +8,7 @@ import {
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-typebox";
-import { t } from "elysia";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import pet from "./pet";
 import { gender } from "./types";
 import userSubscription from "./userSubscription";
@@ -34,15 +33,19 @@ export const userRelations = relations(user, ({ one, many }) => ({
 	pets: many(pet),
 }));
 
-const _createUserSchema = createInsertSchema(user);
-const _optionalExternalId = t.Object({
-	..._createUserSchema.properties,
-	externalId: t.Optional(t.String()),
+export const selectUserSchema = createSelectSchema(user).omit({
+	id: true,
+	updatedAt: true,
 });
-export const createUserSchema = t.Omit(_optionalExternalId, [
-	"id",
-	"updatedAt",
-]);
-export type CreateUserSchema = typeof createUserSchema.static;
+export const insertUserSchema = createInsertSchema(user);
+
+const userSubscriptionSchema = createSelectSchema(userSubscription);
+
+export const selectFullUserSchema = selectUserSchema.extend({
+	subscription: userSubscriptionSchema.omit({
+		id: true,
+		userId: true,
+	}),
+});
 
 export default user;

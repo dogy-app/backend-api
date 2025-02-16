@@ -42,4 +42,5 @@ const app = new Elysia()
 		}),
 	)
 	.use(api);
+
 export default app;
