@@ -14,7 +14,7 @@ header = """
 # https://tera.netlify.app/docs
 body = """
 {% set github_repo = 'backend-api' %}
-{% set branch = 'go' %}
+{% set branch = 'main' %}
 {% set github_username = 'dogy-app' %}
 
 {% if version %}\
