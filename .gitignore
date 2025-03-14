@@ -4,3 +4,7 @@
 *.pem
 tmp/
 CHANGELOG.md
+
+
+# Added by cargo
+/target
