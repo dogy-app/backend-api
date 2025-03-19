@@ -1,2 +1,3 @@
 mod core;
-mod layer;
+mod error;
+pub mod layer;
