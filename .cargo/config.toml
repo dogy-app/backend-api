@@ -1,0 +1,2 @@
+[env]
+RUST_LOG="dogy_backend_api=debug"
