@@ -1,11 +1,53 @@
 use axum::{routing::get, Json, Router};
+use config::load_config;
+use serde_json::json;
+use service::users::routes::root_user_routes;
+use sqlx::{Connection, PgConnection};
+use tracing_subscriber::EnvFilter;
+
+pub use self::error::{Error, Result};
+
+mod config;
+mod error;
+mod middleware;
+mod service;
 
 #[tokio::main]
-async fn main() {
-    // build our application with a single route
-    let app = Router::new().route("/", get(|| async { Json("Hello, World!") }));
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    tracing_subscriber::fmt()
+        .without_time()
+        .with_target(false)
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
+
+    let config = load_config();
+    println!("Port: {}", config.PORT);
+    //let mut conn = PgConnection::connect(&config.DATABASE_URL).await.unwrap();
+    //sqlx::migrate!("./migrations").run(&mut conn).await?;
+    //let row = sqlx::query("SELECT 1 + 1 AS result")
+    //    .fetch_one(&mut conn)
+    //    .await?;
+    //
+    //let sum: i32 = row.get("result");
+    //
+    //println!("result: {}", sum);
+
+    let app = Router::new()
+        .route(
+            "/",
+            get(|| async { Json(json!({ "message": "Welcome to Dogy API" })) }),
+        )
+        .nest(
+            "/api/v1",
+            service::healthcheck::routes::healthcheck_routes().await,
+        )
+        .nest("/api/v1", root_user_routes().await);
 
     // run our app with hyper, listening globally on port 8080
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.PORT))
+        .await
+        .unwrap();
     axum::serve(listener, app).await.unwrap();
+
+    Ok(())
 }
