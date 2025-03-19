@@ -5,11 +5,13 @@ edition = "2021"
 
 [dependencies]
 axum = "0.8.1"
+chrono = { version = "0.4.40", features = ["serde"] }
 dotenv = "0.15.0"
 jsonwebtoken = "9.3.1"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
-sqlx = { version = "0.8.3", features = ["runtime-tokio", "tls-native-tls"] }
+sqlx = { version = "0.8.3", features = ["chrono", "postgres", "runtime-tokio", "tls-native-tls", "uuid"] }
 tokio = { version = "1.43.0", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+uuid = { version = "1.16.0", features = ["serde", "v7"] }
