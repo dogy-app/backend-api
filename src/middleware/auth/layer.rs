@@ -1,10 +1,13 @@
+use axum::extract::State;
 use axum::http::StatusCode;
 use axum::{extract::Request, http::header, middleware::Next, response::Response};
 use uuid::Uuid;
 
+use crate::AppState;
+
 use super::core::authenticate_user;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CurrentUser {
     pub user_id: String,
     pub role: Option<String>,
@@ -32,23 +35,29 @@ pub async fn auth_middleware(mut req: Request, next: Next) -> Result<Response, S
     }
 }
 
-pub async fn get_internal_id(mut req: Request, next: Next) -> Result<Response, StatusCode> {
-    let current_user = req
-        .extensions_mut()
-        .get::<CurrentUser>()
-        .unwrap()
-        .to_owned();
+pub async fn get_internal_id(
+    State(state): State<AppState>,
+    mut req: Request,
+    next: Next,
+) -> Result<Response, StatusCode> {
+    println!("Retrieving Internal ID");
+    let current_user = req.extensions_mut().get::<CurrentUser>().unwrap().clone();
 
     let query = "SELECT id FROM users where external_id = $1";
+    let internal_id: Option<Uuid> = sqlx::query_scalar(query)
+        .bind(&current_user.user_id)
+        .fetch_one(&*state.db)
+        .await
+        .unwrap_or(None);
+    println!("Internal ID: {}", internal_id.unwrap());
 
-    if let Some(_) = current_user.internal_id {
-        req.extensions_mut()
-            .remove::<CurrentUser>()
-            .insert(CurrentUser {
-                user_id: current_user.user_id.clone(),
-                role: current_user.role.clone(),
-                internal_id: Some(internal_id),
-            });
+    if internal_id.is_some() {
+        let updated_user = CurrentUser {
+            internal_id,
+            ..current_user
+        };
+        println!("Current user: {:?}", updated_user);
+        req.extensions_mut().insert(updated_user);
         Ok(next.run(req).await)
     } else {
         Err(StatusCode::UNAUTHORIZED)
