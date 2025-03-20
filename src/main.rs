@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::{routing::get, Json, Router};
 use config::load_config;
 use serde_json::json;
-use service::users::routes::root_user_routes;
+use service::{pets::routes::root_pet_routes, users::routes::root_user_routes};
 use sqlx::{postgres::PgPoolOptions, Connection, PgConnection, PgPool};
 use tracing_subscriber::EnvFilter;
 
@@ -38,7 +38,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("--> Connected to database.");
 
     //let mut conn = PgConnection::connect(&config.DATABASE_URL).await.unwrap();
-    //sqlx::migrate!("./migrations").run(&mut conn).await?;
+    //sqlx::migrate!("./migrations").run(&pool).await?;
     //let row = sqlx::query("SELECT 1 + 1 AS result")
     //    .fetch_one(&mut conn)
     //    .await?;
@@ -55,6 +55,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             get(|| async { Json(json!({ "message": "Welcome to Dogy API" })) }),
         )
         .nest("/api/v1", root_user_routes(shared_state.clone()).await)
+        .nest("/api/v1", root_pet_routes().await)
         .with_state(shared_state)
         .nest(
             "/api/v1",
