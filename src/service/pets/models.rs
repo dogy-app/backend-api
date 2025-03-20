@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sqlx::Type;
+use uuid::Uuid;
 
 #[derive(Serialize, Type, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -160,52 +161,36 @@ pub enum PetReactivity {
     SameGenderDogs,
 }
 
-#[derive(Serialize, Type, Deserialize)]
-#[sqlx(type_name = "pet_breed")]
-pub enum PetBreed {
-    #[serde(rename = "Australian Shepherd")]
-    #[sqlx(rename = "Australian Shepherd")]
-    AustralianShepherd,
-
-    #[serde(rename = "American Cocker Spaniel")]
-    #[sqlx(rename = "American Cocker Spaniel")]
-    AmericanCockerSpaniel,
-
-    Akita,
-
-    #[serde(rename = "Australian Cattle")]
-    #[sqlx(rename = "Australian Cattle")]
-    AustralianCattle,
+#[derive(Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct PetBase {
+    #[serde(rename = "petID", skip_deserializing)]
+    pub pet_id: Uuid,
+    pub name: String,
+    pub age: i16,
+    pub gender: Gender,
+    pub size: PetSize,
+    pub photo_url: String,
+    pub weight: f32,
+    pub weight_unit: WeightUnit,
 }
 
-//trait DbEnum {
-//    fn to_db_value(&self) -> &'static str;
-//    fn from_db_value(value: &str) -> Option<Self>
-//    where
-//        Self: Sized;
-//}
-//
-//impl DbEnum for PetAggressionLevel {
-//    fn to_db_value(&self) -> &'static str {
-//        match self {
-//            PetAggressionLevel::NonAggressive => "Non-aggressive",
-//            PetAggressionLevel::GuardingBehavior => "Guarding behavior",
-//            PetAggressionLevel::MildAggression => "Mild aggression under specific circumstances",
-//            PetAggressionLevel::KnownHistoryAggression => "Known history of aggression",
-//        }
-//    }
-//    fn from_db_value(value: &str) -> Option<Self>
-//    where
-//        Self: Sized,
-//    {
-//        match value {
-//            "Non-aggressive" => Some(PetAggressionLevel::NonAggressive),
-//            "Guarding behavior" => Some(PetAggressionLevel::GuardingBehavior),
-//            "Mild aggression under specific circumstances" => {
-//                Some(PetAggressionLevel::MildAggression)
-//            }
-//            "Known history of aggression" => Some(PetAggressionLevel::KnownHistoryAggression),
-//            _ => None,
-//        }
-//    }
-//}
+#[derive(Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct PetAttributes {
+    pub aggression_levels: Vec<PetAggressionLevel>,
+    pub allergies: Vec<PetAllergy>,
+    pub breeds: Vec<String>,
+    pub behaviors: Vec<PetBehavior>,
+    pub interactions: Vec<PetInteraction>,
+    pub personalities: Vec<PetPersonality>,
+    pub reactivities: Vec<PetReactivity>,
+    pub sterilized: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct FullPet {
+    #[serde(flatten)]
+    pub base: PetBase,
+    pub attributes: PetAttributes,
+}
