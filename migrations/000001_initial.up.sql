@@ -16,7 +16,26 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 GRANT USAGE, SELECT ON SEQUENCES TO web_backend_public;
 
 CREATE EXTENSION "postgis";
-CREATE EXTENSION "pg_uuidv7";
+CREATE OR REPLACE FUNCTION UUID_GENERATE_V7()
+RETURNS UUID
+AS $$
+BEGIN
+  RETURN ENCODE(
+    SET_BIT(
+      SET_BIT(
+        OVERLAY(UUID_SEND(GEN_RANDOM_UUID())
+                PLACING SUBSTRING(INT8SEND(FLOOR(EXTRACT(EPOCH FROM CLOCK_TIMESTAMP()) * 1000)::BIGINT) FROM 3)
+                FROM 1 FOR 6
+        ),
+        52, 1
+      ),
+      53, 1
+    ),
+    'HEX')::UUID;
+END
+$$
+LANGUAGE PLPGSQL
+VOLATILE;
 
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
@@ -32,7 +51,6 @@ CREATE TYPE "public"."gender" AS ENUM('male', 'female');--> statement-breakpoint
 CREATE TYPE "public"."pet_aggression_level" AS ENUM('Non-aggressive', 'Guarding behavior', 'Mild aggression under specific circumstances', 'Known history of aggression');--> statement-breakpoint
 CREATE TYPE "public"."pet_allergy" AS ENUM('None', 'Beef', 'Chicken', 'Lamb', 'Pork', 'Fish', 'Eggs', 'Milk', 'Cheese', 'Barley', 'Wheat', 'Corn', 'Soy', 'Peanuts', 'Sesame', 'Millet', 'Rice', 'Oats', 'Tree Nuts', 'Yeast', 'Fruits');--> statement-breakpoint
 CREATE TYPE "public"."pet_behavior" AS ENUM('Obedient', 'Stubborn', 'Curious', 'Alert', 'Relaxed', 'Anxious', 'Fearful', 'Confident', 'Aggressive', 'Timid', 'Dominant', 'Submissive');--> statement-breakpoint
-CREATE TYPE "public"."pet_breed" AS ENUM('Australian Shepherd', 'American Cocker Spaniel', 'Akita', 'Australian Cattle', 'Airedale Terrier', 'Alaskan Malamute', 'American Staffordshire Terrier', 'Anatolian Shepherd', 'American Eskimo', 'Afghan Hound', 'American Hairless Terrier', 'Australian Terrier', 'American Water Spaniel', 'Affenpinscher', 'American English Coonhound', 'American Foxhound', 'Azawakh', 'American Pit Bull Terrier', 'American White Shepherd', 'Alapaha Blue Blood Bulldog', 'Alaskan Klee Kai', 'Appenzeller Sennenhund', 'Australian Bulldog', 'Australian Kelpie', 'Australian Stumpy Tail Cattle', 'Austrian Black and Tan Hound', 'Austrian Pinscher', 'Alaskan Husky', 'American Bulldog', 'Andalusian Hound', 'American Mastiff', 'Akbash', 'Alano Espanol', 'Ariege Pointer', 'Ariegeois', 'Africanis', 'Aidi', 'American Staghound', 'Alopekis', 'Bulldog', 'Beagle', 'Boxer', 'Boston Terrier', 'Bernese Mountain', 'Brittany', 'Border Collie', 'Basset Hound', 'Belgian Malinois', 'Bichon Frise', 'Bloodhound', 'Bullmastiff', 'Bull Terrier', 'Basenji', 'Boykin Spaniel', 'Brussels Griffon', 'Bouvier des Flandres', 'Border Terrier', 'Borzoi', 'Belgian Tervuren', 'Belgian Sheep', 'Beauceron', 'Boerboel', 'Bearded Collie', 'Black Russian Terrier', 'Black and Tan Coonhound', 'Bluetick Coonhound', 'Bedlington Terrier', 'Barbet', 'Briard', 'Berger Picard', 'Bergamasco', 'Bolognese', 'Basset Bleu de Gascogne', 'Basset Fauve de Bretagne', 'Belgian Shepherd Laekenois', 'Black Mouth Cur', 'Black Norwegian Elkhound', 'Blue Lacy', 'Blue Picardy Spaniel', 'Bohemian Shepherd', 'Bracco Italiano', 'Braque du Bourbonnais', 'Brazilian Terrier', 'Bulgarian Shepherd', 'Basset Artesien Normand', 'Broholmer', 'Biewer Terrier', 'Briquet Griffon Vendeen', 'Bukovina Sheepdog', 'Beagle-Harrier', 'Beaglier', 'Bavarian Mountain Hound', 'Bouvier des Ardennes', 'Bull Arab', 'Cavalier King Charles Spaniel', 'Cane Corso', 'Chihuahua', 'Collie', 'Chesapeake Bay Retriever', 'Cardigan Welsh Corgi', 'Cairn Terrier', 'Chinese Crested', 'Coton De Tulear', 'Chow Chow', 'Clumber Spaniel', 'Curly-Coated Retriever', 'Cirneco dell’Etna', 'Canaan', 'Chinook', 'Cesky Terrier', 'Cockapoo', 'Canadian Eskimo', 'Carolina', 'Carpathian Sheepdog', 'Catahoula Bulldog', 'Catahoula Leopard', 'Catalan Sheepdog', 'Caucasian Ovcharka', 'Central Asian Ovtcharka', 'Croatian Sheepdog', 'Czechoslovakian Wolfdog', 'Cesky Fousek', 'Chart Polski', 'Cairmal', 'Chorkie', 'Cockalier', 'Caravan Hound', 'Cão da Serra de Aires', 'Chippiparai', 'Chizer', 'Cotonese', 'Dachshund', 'Doberman Pinscher', 'Dalmatian', 'Dogue de Bordeaux', 'Dogo Argentino', 'Dandie Dinmont Terrier', 'Dutch Shepherd', 'Double Doodle', 'Deutsche Bracke', 'Dorkie', 'Danish-Swedish Farmdog', 'Dingo', 'Dutch Smoushond', 'Drentse Patrijshond', 'Drever', 'Dunker', 'Dorgi', 'English Springer Spaniel', 'English Cocker Spaniel', 'English Setter', 'English Toy Spaniel', 'Entlebucher Mountain', 'English Foxhound', 'East-European Shepherd', 'English Shepherd', 'Eurasier', 'East Siberian Laika', 'French Bulldog', 'Flat-Coated Retriever', 'Field Spaniel', 'Finnish Lapphund', 'Finnish Spitz', 'Fila Brasileiro', 'French Spaniel', 'Finnish Hound', 'Francais Blanc et Noir', 'German Shepherd', 'Golden Retriever', 'German Shorthaired Pointer', 'Great Dane', 'German Wirehaired Pointer', 'Giant Schnauzer', 'Great Pyrenees', 'Greater Swiss Mountain', 'Gordon Setter', 'German Pinscher', 'Greyhound', 'Glen of Imaal Terrier', 'Grand Basset Griffon Vendeen', 'Goldendoodle', 'German Longhaired Pointer', 'Greenland', 'Griffon bleu de Gascogne', 'Grand Bleu de Gascogne', 'Havanese', 'Harrier', 'Hokkaido', 'Hovawart', 'Hamilton Hound', 'Italian Greyhound', 'Irish Wolfhound', 'Irish Setter', 'Irish Terrier', 'Icelandic Sheepdog', 'Irish Red and White Setter', 'Ibizan Hound', 'Irish Water Spaniel', 'Jack Russell Terrier', 'Japanese Chin', 'Japanese Spitz', 'Jagdterrier', 'Japanese Terrier', 'Jämthund', 'Keeshond', 'Kerry Blue Terrier', 'Kooikerhondje', 'Kuvasz', 'Komondor', 'Korean Jindo', 'Karelian Bear', 'Kishu Ken', 'Koolie', 'Kromfohrlander', 'Kangal', 'King Shepherd', 'Kyi-Leo', 'Karst Shepherd', 'Labrador Retriever', 'Lhasa Apso', 'Lagotto Romagnolo', 'Leonberger', 'Lakeland Terrier', 'Lowchen', 'Large Munsterlander', 'Lancashire Heeler', 'Landseer', 'Lucas Terrier', 'Lurcher', 'Lapponian Herder', 'Miniature Schnauzer', 'Miniature American Shepherd', 'Mastiff', 'Maltese', 'Miniature Pinscher', 'Miniature Bull Terrier', 'Manchester Terrier', 'Miniature Bulldog', 'Miniature Poodle', 'Miniature Shar Pei', 'McNab', 'Mudi', 'Mountain Feist', 'Maremma Sheepdog', 'Mal-Shi', 'Moscow Watchdog', 'Mountain Cur', 'Majestic Tree Hound', 'Newfoundland', 'Nova Scotia Duck Tolling Retriever', 'Norwegian Elkhound', 'Neapolitan Mastiff', 'Norwich Terrier', 'Norfolk Terrier', 'Norwegian Buhund', 'Norwegian Lundehund', 'Norrbottenspets', 'Northern Inuit', 'New Guinea Singing', 'Old English Sheepdog', 'Otterhound', 'Olde English Bulldogge', 'Poodle', 'Pembroke Welsh Corgi', 'Pomeranian', 'Pug', 'Portuguese Water', 'Papillon', 'Pekingese', 'Parson Russell Terrier', 'Pointer', 'Puli', 'Pumi', 'Portuguese Podengo Pequeno', 'Petit Basset Griffon Vendeen', 'Plott Hound', 'Polish Lowland Sheepdog', 'Pharaoh Hound', 'Pyrenean Shepherd', 'Pakistani Mastiff', 'Patterdale Terrier', 'Perro de Presa Canario', 'Perro de Presa Mallorquin', 'Peruvian Inca Orchid', 'Picardy Spaniel', 'Prazsky Krysarik', 'Pont-Audemer Spaniel', 'Pyrenean Mastiff', 'Polish Tatra Sheepdog', 'Puggle', 'Pudelpointer', 'Plummer Terrier', 'Portuguese Pointer', 'Polish Hunting Dog', 'Rottweiler', 'Rhodesian Ridgeback', 'Rat Terrier', 'Redbone Coonhound', 'Russian Toy', 'Russian Spaniel', 'Russian Tsvetnaya Bolonka', 'Romanian Mioritic Shepherd Dog', 'Rajapalayam', 'Rafeiro do Alentejo', 'Siberian Husky', 'Shih Tzu', 'Shetland Sheepdog', 'Shiba Inu', 'St. Bernard', 'Samoyed', 'Scottish Terrier', 'Soft Coated Wheaten Terrier', 'Shar-Pei', 'Staffordshire Bull Terrier', 'Standard Schnauzer', 'Silky Terrier', 'Spinone Italiano', 'Schipperke', 'Smooth Fox Terrier', 'Saluki', 'Swedish Vallhund', 'Sealyham Terrier', 'Spanish Water Dog', 'Scottish Deerhound', 'Sussex Spaniel', 'Skye Terrier', 'Sloughi', 'Small Munsterlander', 'Saarloos Wolfdog', 'Sarplaninac', 'Schapendoes', 'Shikoku', 'Shiloh Shepherd', 'Silken Windhound', 'Spanish Mastiff', 'Swedish Lapphund', 'Shichon', 'Slovensky Cuvac', 'Stabyhoun', 'Spanish Greyhound', 'Seppala Siberian Sleddog', 'South Russian Ovcharka', 'Sapsali', 'Smaland Hound', 'Serbian Hound', 'Tibetan Terrier', 'Toy Fox Terrier', 'Tibetan Spaniel', 'Tibetan Mastiff', 'Treeing Walker Coonhound', 'Toy Poodle', 'Tamaskan Dog', 'Thai Ridgeback', 'Tosa Ken', 'Texas Heeler', 'Tornjak', 'Taco Terrier', 'Thai Bangkaew Dog', 'Transylvanian Hound', 'Vizsla', 'Volpino Italiano', 'Weimaraner', 'West Highland White Terrier', 'Whippet', 'Wirehaired Pointing Griffon', 'Wire Fox Terrier', 'Welsh Terrier', 'Welsh Springer Spaniel', 'Wirehaired Vizsla', 'West Siberian Laika', 'Wetterhoun', 'Xoloitzcuintli', 'Yorkshire Terrier');--> statement-breakpoint
 CREATE TYPE "public"."pet_interaction" AS ENUM('Loves other dogs', 'Prefers human company', 'Good with children', 'Good with cats/other pets', 'Enjoys large groups', 'Prefers one-on-one interactions');
 CREATE TYPE "public"."pet_personality" AS ENUM('Playful', 'Energetic', 'Shy', 'Outgoing', 'Calm', 'Reserved', 'Affectionate', 'Independent');
 CREATE TYPE "public"."pet_reactivity" AS ENUM('Non-reactive', 'Reactive to strangers', 'Reactive to noises', 'Reactive to moving objects', 'Reactive to specific situations', 'Reactive to same gender dogs');
@@ -86,7 +104,7 @@ CREATE TABLE IF NOT EXISTS "pets" (
     "photo_url" TEXT NOT NULL,
     "gender" "gender" NOT NULL,
     "size" "pet_size" NOT NULL,
-    "weight" NUMERIC(5,2) NOT NULL,
+    "weight" FLOAT4 NOT NULL,
     "weight_unit" "weight_unit" NOT NULL
 );
 
@@ -105,49 +123,49 @@ CREATE TABLE IF NOT EXISTS "pet_attrs" (
 CREATE TABLE "pet_attr_aggression_levels" (
 	"id" UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
 	"pet_attr_id" UUID NOT NULL,
-	"aggression_level" "pet_aggression_level"[] NOT NULL,
+	"aggression_levels" "pet_aggression_level"[] NOT NULL,
     CONSTRAINT "pet_attrs_aggression_levels_pet_attr_id_unique" UNIQUE("pet_attr_id")
 );
 
 CREATE TABLE "pet_attr_allergies" (
 	"id" UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
 	"pet_attr_id" UUID NOT NULL,
-	"allergy" "pet_allergy"[] NOT NULL,
+	"allergies" "pet_allergy"[] NOT NULL,
     CONSTRAINT "pet_attrs_allergies_pet_attr_id_unique" UNIQUE("pet_attr_id")
 );
 
 CREATE TABLE "pet_attr_behaviors" (
 	"id" UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
 	"pet_attr_id" UUID NOT NULL,
-	"behavior" "pet_behavior"[] NOT NULL,
+	"behaviors" "pet_behavior"[] NOT NULL,
     CONSTRAINT "pet_attrs_behaviors_pet_attr_id_unique" UNIQUE("pet_attr_id")
 );
 
 CREATE TABLE "pet_attr_breeds" (
 	"id" UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
 	"pet_attr_id" UUID NOT NULL,
-	"breed" "pet_breed"[] NOT NULL,
+	"breeds" VARCHAR(255)[] NOT NULL,
     CONSTRAINT "pet_attrs_breeds_pet_attr_id_unique" UNIQUE("pet_attr_id")
 );
 
 CREATE TABLE "pet_attr_interactions" (
 	"id" UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
 	"pet_attr_id" UUID NOT NULL,
-	"interaction" "pet_interaction"[] NOT NULL,
+	"interactions" "pet_interaction"[] NOT NULL,
     CONSTRAINT "pet_attrs_interactions_pet_attr_id_unique" UNIQUE("pet_attr_id")
 );
 
 CREATE TABLE "pet_attr_personalities" (
 	"id" UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
 	"pet_attr_id" UUID NOT NULL,
-	"personality" "pet_personality"[] NOT NULL,
+	"personalities" "pet_personality"[] NOT NULL,
     CONSTRAINT "pet_attrs_personalities_pet_attr_id_unique" UNIQUE("pet_attr_id")
 );
 
 CREATE TABLE "pet_attr_reactivities" (
 	"id" UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
 	"pet_attr_id" UUID NOT NULL,
-	"reactivity" "pet_reactivity"[] NOT NULL,
+	"reactivities" "pet_reactivity"[] NOT NULL,
     CONSTRAINT "pet_attrs_reactivities_pet_attr_id_unique" UNIQUE("pet_attr_id")
 );
 
