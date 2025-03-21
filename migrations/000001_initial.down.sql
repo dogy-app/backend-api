@@ -48,8 +48,6 @@ DROP TYPE IF EXISTS "public"."pet_personality";
 
 DROP TYPE IF EXISTS "public"."pet_interaction";
 
-DROP TYPE IF EXISTS "public"."pet_breed";
-
 DROP TYPE IF EXISTS "public"."pet_behavior";
 
 DROP TYPE IF EXISTS "public"."pet_allergy";
