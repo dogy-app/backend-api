@@ -4,7 +4,7 @@ use axum::{routing::get, Json, Router};
 use config::load_config;
 use serde_json::json;
 use service::{pets::routes::root_pet_routes, users::routes::root_user_routes};
-use sqlx::{postgres::PgPoolOptions, Connection, PgConnection, PgPool};
+use sqlx::{postgres::PgPoolOptions, PgPool};
 use tracing_subscriber::EnvFilter;
 
 pub use self::error::{Error, Result};
@@ -55,7 +55,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             get(|| async { Json(json!({ "message": "Welcome to Dogy API" })) }),
         )
         .nest("/api/v1", root_user_routes(shared_state.clone()).await)
-        .nest("/api/v1", root_pet_routes().await)
+        .nest("/api/v1", root_pet_routes(shared_state.clone()).await)
         .with_state(shared_state)
         .nest(
             "/api/v1",
