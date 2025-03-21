@@ -1,5 +1,6 @@
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use sqlx::Type;
+use sqlx::{prelude::FromRow, Type};
 use uuid::Uuid;
 
 #[derive(Serialize, Type, Deserialize)]
@@ -177,6 +178,25 @@ pub struct PetBase {
 
 #[derive(Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
+pub struct UpdatePetBase {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub age: Option<i16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gender: Option<Gender>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub size: Option<PetSize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub photo_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub weight: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub weight_unit: Option<WeightUnit>,
+}
+
+#[derive(Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct PetAttributes {
     pub aggression_levels: Vec<PetAggressionLevel>,
     pub allergies: Vec<PetAllergy>,
@@ -188,9 +208,58 @@ pub struct PetAttributes {
     pub sterilized: bool,
 }
 
+#[derive(Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdatePetAttributes {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub aggression_levels: Option<Vec<PetAggressionLevel>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub allergies: Option<Vec<PetAllergy>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub breeds: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub behaviors: Option<Vec<PetBehavior>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interactions: Option<Vec<PetInteraction>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub personalities: Option<Vec<PetPersonality>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reactivities: Option<Vec<PetReactivity>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sterilized: Option<bool>,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct FullPet {
     #[serde(flatten)]
     pub base: PetBase,
     pub attributes: PetAttributes,
+}
+
+// This struct should only be used for querying in db and not for JSON response.
+#[derive(Type, FromRow)]
+pub struct JoinedFullPet {
+    pub id: Uuid,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+    pub name: String,
+    pub age: i16,
+    pub photo_url: String,
+    pub gender: Gender,
+    pub size: PetSize,
+    pub weight: f32,
+    pub weight_unit: WeightUnit,
+    pub is_sterilized: bool,
+    pub aggression_levels: Vec<PetAggressionLevel>,
+    pub allergies: Vec<PetAllergy>,
+    pub behaviors: Vec<PetBehavior>,
+    pub breeds: Vec<String>,
+    pub interactions: Vec<PetInteraction>,
+    pub personalities: Vec<PetPersonality>,
+    pub reactivities: Vec<PetReactivity>,
+}
+
+#[derive(Serialize)]
+pub struct AllFullPet {
+    pub pets: Vec<FullPet>,
 }
