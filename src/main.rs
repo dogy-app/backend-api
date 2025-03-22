@@ -3,7 +3,10 @@ use std::sync::Arc;
 use axum::{routing::get, Json, Router};
 use config::load_config;
 use serde_json::json;
-use service::{pets::routes::root_pet_routes, users::routes::root_user_routes};
+use service::{
+    assistant::routes::root_assistant_routes, pets::routes::root_pet_routes,
+    users::routes::root_user_routes,
+};
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use tracing_subscriber::EnvFilter;
 
@@ -37,16 +40,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .expect("Failed to create PgPool.");
     println!("--> Connected to database.");
 
-    //let mut conn = PgConnection::connect(&config.DATABASE_URL).await.unwrap();
-    //sqlx::migrate!("./migrations").run(&pool).await?;
-    //let row = sqlx::query("SELECT 1 + 1 AS result")
-    //    .fetch_one(&mut conn)
-    //    .await?;
-    //
-    //let sum: i32 = row.get("result");
-    //
-    //println!("result: {}", sum);
-    //
+    sqlx::migrate!("./migrations").run(&pool).await?;
     let shared_state = AppState { db: Arc::new(pool) };
 
     let app = Router::new()
@@ -56,6 +50,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         )
         .nest("/api/v1", root_user_routes(shared_state.clone()).await)
         .nest("/api/v1", root_pet_routes(shared_state.clone()).await)
+        .nest("/api/v1", root_assistant_routes(shared_state.clone()).await)
         .with_state(shared_state)
         .nest(
             "/api/v1",
