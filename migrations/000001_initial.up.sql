@@ -1,4 +1,4 @@
-CREATE ROLE web_backend_public WITH LOGIN PASSWORD '${WEB_BACKEND_PUBLIC_PASSWORD}';
+--- CREATE ROLE web_backend_public WITH LOGIN PASSWORD '${WEB_BACKEND_PUBLIC_PASSWORD}';
 
 GRANT CONNECT ON DATABASE "web-backend" TO web_backend_public;
 GRANT USAGE ON SCHEMA public TO web_backend_public;
@@ -94,6 +94,21 @@ CREATE TABLE IF NOT EXISTS "user_subscriptions" (
     "is_trial_mode" BOOLEAN DEFAULT FALSE NOT NULL,
     CONSTRAINT "user_subscriptions_user_id_unique" UNIQUE("user_id")
 );
+
+CREATE TABLE IF NOT EXISTS "user_assistant_threads" (
+    "id" UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    "created_at" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    "user_id" UUID NOT NULL,
+    "thread_id" UUID NOT NULL,
+    "thread_title" VARCHAR(255) NOT NULL,
+    CONSTRAINT "user_assistant_threads_thread_id_unique" UNIQUE("thread_id")
+);
+
+CREATE TRIGGER trigger_set_updated_at_on_user_threads
+BEFORE UPDATE ON "user_assistant_threads"
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
 
 CREATE TABLE IF NOT EXISTS "pets" (
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
@@ -217,4 +232,5 @@ ALTER TABLE "user_subscriptions" ADD CONSTRAINT "user_subscriptions_user_id_user
 ALTER TABLE "user_notifications" ADD CONSTRAINT "user_notifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;
 ALTER TABLE "users_pets_link" ADD CONSTRAINT "users_pets_link_user_id_users_id" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "users_pets_link" ADD CONSTRAINT "users_pets_link_pet_id_pets_id" FOREIGN KEY ("pet_id") REFERENCES "public"."pets"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "user_assistant_threads" ADD CONSTRAINT "user_assistant_threads_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "places_metadata" ADD CONSTRAINT "places_metadata_place_id_places_id_fk" FOREIGN KEY ("place_id") REFERENCES "public"."places"("id") ON DELETE cascade ON UPDATE no action;
