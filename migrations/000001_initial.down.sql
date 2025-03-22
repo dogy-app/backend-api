@@ -26,6 +26,8 @@ DROP TABLE IF EXISTS "pet_attrs";
 
 DROP TABLE IF EXISTS "pets";
 
+DROP TABLE IF EXISTS "user_assistant_threads";
+
 DROP TABLE IF EXISTS "user_subscriptions";
 
 DROP TABLE IF EXISTS "user_notifications";
@@ -107,6 +109,5 @@ REVOKE CONNECT ON DATABASE "${DB_NAME}"
 FROM
   web_backend_public;
 
--- +goose envsub off
 -- Drop the role
 DROP ROLE web_backend_public;
