@@ -1,17 +1,30 @@
-FROM golang:1.23-alpine AS build
+# Use a minimal base image for building
+FROM rust:1.85 AS builder
 
+# Set the working directory
 WORKDIR /app
 
-COPY go.mod go.sum ./
-RUN go mod download
+# Cache dependencies
+COPY Cargo.toml Cargo.lock ./
+COPY src/ ./src
 
-COPY . .
+# Pre-build dependencies (optimized caching)
+RUN cargo build --release --bin dogy-backend-api
 
-RUN go build -o main cmd/main.go
+# Create a minimal final image
+FROM debian:bookworm-slim
 
-FROM alpine:3.20.1 AS prod
+# Install runtime dependencies (OpenSSL and CA certificates)
+RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory
 WORKDIR /app
-COPY --from=build /app/main /app/main
-EXPOSE 8080
 
-ENTRYPOINT [ "./main" ]
+# Copy the built binary from the builder stage
+COPY --from=builder /app/target/release/dogy-backend-api ./
+
+# Set permissions
+RUN chmod +x ./dogy-backend-api
+
+# Define the entry point
+ENTRYPOINT ["./dogy-backend-api"]
