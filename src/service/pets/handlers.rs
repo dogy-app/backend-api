@@ -17,7 +17,6 @@ pub async fn create_pet(
     Json(mut pet): Json<FullPet>,
 ) -> Json<FullPet> {
     let conn = &*state.db;
-    println!("--> Starting transaction...");
     let mut txn = conn.begin().await.unwrap();
 
     // Inserting Base Pet

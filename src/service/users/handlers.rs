@@ -19,7 +19,6 @@ pub async fn create_user(
     Json(mut user): Json<FullUser>,
 ) -> Json<FullUser> {
     let conn = &*state.db;
-    println!("--> Starting transaction...");
     let mut txn = conn.begin().await.unwrap();
 
     // Inserting Base User
@@ -78,7 +77,6 @@ pub async fn get_user(
     State(state): State<AppState>,
     Extension(current_user): Extension<CurrentUser>,
 ) -> Json<FullUser> {
-    println!("--> GET /users test");
     let conn = &*state.db;
     let query = r#"
     SELECT u.*, us.trial_start_date, us.subscription_type, us.is_trial_mode,
@@ -88,8 +86,6 @@ pub async fn get_user(
     LEFT JOIN user_notifications un ON u.id = un.user_id
     WHERE u.id = $1;
     "#;
-
-    println!("--> Starting transaction...");
 
     let user_info = sqlx::query_as::<_, JoinedFullUser>(query)
         .bind(current_user.internal_id.unwrap())
@@ -155,7 +151,6 @@ pub async fn update_user_subscription(
     Extension(current_user): Extension<CurrentUser>,
     Json(user_sub): Json<UserSubscriptionUpdate>,
 ) -> Json<UserSubscriptionUpdate> {
-    println!("--> Updating user subscription");
     let conn = &*state.db;
     let mut query_builder = QueryBuilder::new(
         r#"
@@ -169,8 +164,6 @@ pub async fn update_user_subscription(
         .push(r#", subscription_type), is_trial_mode = COALESCE( "#)
         .push_bind(user_sub.is_trial_mode)
         .push(", is_trial_mode) ");
-
-    println!("--> User Subscription: {:?}", user_sub.trial_start_date);
 
     if let Some(trial_date) = user_sub.trial_start_date {
         match trial_date {
@@ -189,7 +182,6 @@ pub async fn update_user_subscription(
         .push(";");
 
     let query = query_builder.build();
-    println!("--> Query: {}", query.sql());
     query.execute(conn).await.unwrap();
 
     Json(user_sub)

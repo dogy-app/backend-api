@@ -16,7 +16,6 @@ pub struct CurrentUser {
 
 pub async fn auth_middleware(mut req: Request, next: Next) -> Result<Response, StatusCode> {
     // Retrieve authorization header
-    println!("--> Authenticating user...");
     let auth_header = req
         .headers()
         .get(header::AUTHORIZATION)
@@ -40,7 +39,6 @@ pub async fn get_internal_id(
     mut req: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
-    println!("Retrieving Internal ID");
     let current_user = req.extensions_mut().get::<CurrentUser>().unwrap().clone();
 
     let query = "SELECT id FROM users where external_id = $1";
@@ -49,7 +47,6 @@ pub async fn get_internal_id(
         .fetch_one(&*state.db)
         .await
         .unwrap_or(None);
-    println!("Internal ID: {}", internal_id.unwrap());
 
     if internal_id.is_some() {
         let updated_user = CurrentUser {

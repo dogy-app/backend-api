@@ -20,7 +20,7 @@ async fn pet_routes(app_state: AppState) -> Router<AppState> {
             "/{pet_id}",
             get(get_pet).delete(delete_pet).patch(update_base_pet),
         )
-        .route("/attributes/{pet_id}", patch(update_pet_attributes))
+        .route("/{pet_id}/attributes", patch(update_pet_attributes))
         .route_layer(middleware::from_fn_with_state(
             app_state.clone(),
             get_internal_id,
