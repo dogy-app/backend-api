@@ -16,6 +16,7 @@ pub fn load_config() -> &'static Config {
 #[allow(non_snake_case)]
 pub struct Config {
     pub DATABASE_URL: String,
+    pub LANGGRAPH_ASSISTANT_ENDPOINT: String,
     pub CLERK_RSA_MODULUS: String,
     pub CLERK_RSA_EXPONENT: String,
     pub PORT: String,
@@ -25,6 +26,7 @@ impl Config {
     fn from_env() -> Result<Config> {
         Ok(Config {
             DATABASE_URL: get_env("DATABASE_URL")?,
+            LANGGRAPH_ASSISTANT_ENDPOINT: get_env("LANGGRAPH_ASSISTANT_ENDPOINT")?,
             CLERK_RSA_MODULUS: get_env("CLERK_RSA_MODULUS")?,
             CLERK_RSA_EXPONENT: get_env("CLERK_RSA_EXPONENT")?,
             PORT: get_env_opt("PORT", "8080"),

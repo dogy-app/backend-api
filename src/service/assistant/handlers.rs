@@ -10,7 +10,8 @@ use tokio::task;
 use uuid::Uuid;
 
 use crate::{
-    middleware::auth::layer::CurrentUser, service::assistant::models::MessageType, AppState,
+    config::load_config, middleware::auth::layer::CurrentUser,
+    service::assistant::models::MessageType, AppState,
 };
 
 use super::models::{AllThreadResponse, DbThread, Message, Thread, ThreadResponse};
@@ -79,10 +80,11 @@ pub async fn unlink_thread_from_user(
 }
 
 async fn retrieve_thread_history(client: &Client, thread_id: Uuid) -> Vec<Message> {
+    let config = load_config();
     let res: serde_json::Value = client
         .get(format!(
-            "https://dogy-assistant.azurewebsites.net/threads/{}",
-            thread_id
+            "{}/threads/{}",
+            config.LANGGRAPH_ASSISTANT_ENDPOINT, thread_id
         ))
         .send()
         .await
