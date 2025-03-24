@@ -48,10 +48,11 @@ $$ LANGUAGE plpgsql;
 
 CREATE EXTENSION IF NOT EXISTS "postgis";
 
-CREATE TYPE "public"."gender" AS ENUM('male', 'female');--> statement-breakpoint
-CREATE TYPE "public"."pet_aggression_level" AS ENUM('Non-aggressive', 'Guarding behavior', 'Mild aggression under specific circumstances', 'Known history of aggression');--> statement-breakpoint
-CREATE TYPE "public"."pet_allergy" AS ENUM('None', 'Beef', 'Chicken', 'Lamb', 'Pork', 'Fish', 'Eggs', 'Milk', 'Cheese', 'Barley', 'Wheat', 'Corn', 'Soy', 'Peanuts', 'Sesame', 'Millet', 'Rice', 'Oats', 'Tree Nuts', 'Yeast', 'Fruits');--> statement-breakpoint
-CREATE TYPE "public"."pet_behavior" AS ENUM('Obedient', 'Stubborn', 'Curious', 'Alert', 'Relaxed', 'Anxious', 'Fearful', 'Confident', 'Aggressive', 'Timid', 'Dominant', 'Submissive');--> statement-breakpoint
+CREATE TYPE "public"."user_gender" AS ENUM('male', 'female', 'other');
+CREATE TYPE "public"."pet_gender" AS ENUM('male', 'female');
+CREATE TYPE "public"."pet_aggression_level" AS ENUM('Non-aggressive', 'Guarding behavior', 'Mild aggression under specific circumstances', 'Known history of aggression');
+CREATE TYPE "public"."pet_allergy" AS ENUM('None', 'Beef', 'Chicken', 'Lamb', 'Pork', 'Fish', 'Eggs', 'Milk', 'Cheese', 'Barley', 'Wheat', 'Corn', 'Soy', 'Peanuts', 'Sesame', 'Millet', 'Rice', 'Oats', 'Tree Nuts', 'Yeast', 'Fruits');
+CREATE TYPE "public"."pet_behavior" AS ENUM('Obedient', 'Stubborn', 'Curious', 'Alert', 'Relaxed', 'Anxious', 'Fearful', 'Confident', 'Aggressive', 'Timid', 'Dominant', 'Submissive');
 CREATE TYPE "public"."pet_interaction" AS ENUM('Loves other dogs', 'Prefers human company', 'Good with children', 'Good with cats/other pets', 'Enjoys large groups', 'Prefers one-on-one interactions');
 CREATE TYPE "public"."pet_personality" AS ENUM('Playful', 'Energetic', 'Shy', 'Outgoing', 'Calm', 'Reserved', 'Affectionate', 'Independent');
 CREATE TYPE "public"."pet_reactivity" AS ENUM('Non-reactive', 'Reactive to strangers', 'Reactive to noises', 'Reactive to moving objects', 'Reactive to specific situations', 'Reactive to same gender dogs');
@@ -67,7 +68,7 @@ CREATE TABLE IF NOT EXISTS "users" (
     "name" VARCHAR(255) NOT NULL,
     "external_id" VARCHAR(32) NOT NULL,
     "timezone" VARCHAR(32) NOT NULL,
-    "gender" "gender" NOT NULL,
+    "gender" "user_gender" NOT NULL,
     "has_onboarded" BOOLEAN DEFAULT FALSE NOT NULL,
     CONSTRAINT "users_external_id_unique" UNIQUE("external_id")
 );
@@ -118,7 +119,7 @@ CREATE TABLE IF NOT EXISTS "pets" (
     "name" VARCHAR(255) NOT NULL,
     "age" SMALLINT NOT NULL CHECK (age >= 0 AND age <= 100),
     "photo_url" TEXT NOT NULL,
-    "gender" "gender" NOT NULL,
+    "gender" "pet_gender" NOT NULL,
     "size" "pet_size" NOT NULL,
     "weight" FLOAT4 NOT NULL,
     "weight_unit" "weight_unit" NOT NULL

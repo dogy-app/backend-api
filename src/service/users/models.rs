@@ -5,10 +5,11 @@ use uuid::Uuid;
 
 #[derive(Serialize, Type, Deserialize)]
 #[serde(rename_all = "lowercase")]
-#[sqlx(type_name = "gender", rename_all = "lowercase")]
+#[sqlx(type_name = "user_gender", rename_all = "lowercase")]
 pub enum Gender {
     Male,
     Female,
+    Other,
 }
 
 #[derive(Serialize, Type, Deserialize)]
