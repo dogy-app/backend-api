@@ -1,7 +1,7 @@
 use axum::extract::State;
 use axum::{extract::Extension, Json};
 use serde_json::{json, Value};
-use sqlx::{Execute, QueryBuilder};
+use sqlx::QueryBuilder;
 use uuid::Uuid;
 
 use crate::middleware::auth::layer::CurrentUser;

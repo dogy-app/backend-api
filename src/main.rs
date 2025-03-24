@@ -40,7 +40,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .expect("Failed to create PgPool.");
     println!("--> Connected to database.");
 
-    sqlx::migrate!("./migrations").run(&pool).await?;
+    //sqlx::migrate!("./migrations").run(&pool).await?;
     let shared_state = AppState { db: Arc::new(pool) };
 
     let app = Router::new()

@@ -4,6 +4,6 @@ pub type Result<T> = core::result::Result<T, Error>;
 pub enum Error {
     InvalidDecodingKey,
     CannotDecodeToken,
-    MissingAuthHeader,
-    NoBearerPrefix,
+    //MissingAuthHeader,
+    //NoBearerPrefix,
 }
