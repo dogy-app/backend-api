@@ -10,6 +10,7 @@ use super::core::authenticate_user;
 #[derive(Clone, Debug)]
 pub struct CurrentUser {
     pub user_id: String,
+    #[allow(dead_code)]
     pub role: Option<String>,
     pub internal_id: Option<Uuid>,
 }

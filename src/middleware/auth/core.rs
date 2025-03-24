@@ -6,6 +6,7 @@ use crate::config::load_config;
 use super::error::{Error, Result};
 use super::layer::CurrentUser;
 
+#[allow(dead_code)]
 #[derive(Deserialize)]
 struct Claims {
     pub azp: String,
@@ -46,7 +47,9 @@ pub fn authenticate_user(auth_header: &str) -> Result<CurrentUser> {
 }
 
 mod test {
+    #[allow(unused_imports)]
     use super::decode_jwt;
+    #[allow(unused_imports)]
     use jsonwebtoken::Algorithm;
 
     #[test]
