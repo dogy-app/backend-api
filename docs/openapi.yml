@@ -1,0 +1,759 @@
+openapi: "3.1.0"
+info:
+  title: Dogy Backend API
+  description: |-
+    Documentation for Dogy Backend API.
+                      Please message @Sheape if you have any questions.
+  version: 0.2.0
+servers:
+  - url: /api/v1
+    description: API v1 Base Path
+tags:
+  - name: User
+    description: User endpoints
+  - name: Pet
+    description: Pet endpoints
+  - name: Threads
+    description: Assistant API threads endpoints
+  - name: Health check
+    description: Health check endpoints
+paths:
+  /:
+    get:
+      responses:
+        '200':
+          $ref: '#/components/responses/healthcheck.v1'
+      operationId: getApiV1
+      summary: Health check for v1
+      description: Health check
+      tags:
+        - Health check
+  /users:
+    get:
+      # parameters:
+      #   - description: |-
+      #       Clerk User ID (Optional). If not provided,
+      #                           the current user's ID will be used.
+      #     schema:
+      #       type: string
+      #       title: User ID
+      #       minLength: 32
+      #       maxLength: 32
+      #     in: path
+      #     name: id
+      #     required: false
+      responses:
+        '200':
+          $ref: '#/components/responses/users.getResponse'
+      operationId: getApiV1UsersById
+      summary: Get User by ID
+      description: Get user by Clerk ID.
+      tags:
+        - User
+    post:
+      # parameters:
+      #   - description: |-
+      #       Clerk User ID (Optional). If not provided,
+      #                           the current user's ID will be used.
+      #     schema:
+      #       type: string
+      #       title: User ID
+      #       minLength: 32
+      #       maxLength: 32
+      #     in: path
+      #     name: id
+      #     required: false
+      requestBody:
+        $ref: "#/components/requestBodies/users.createRequest"
+      responses:
+        '200':
+          $ref: '#/components/responses/users.getResponse'
+      operationId: getApiV1UsersById
+      summary: Create User
+      description: Create new user.
+      tags:
+        - User
+    patch:
+      # parameters:
+      #   - description: |-
+      #       Clerk User ID (Optional). If not provided,
+      #                           the current user's ID will be used.
+      #     schema:
+      #       type: string
+      #       title: User ID
+      #       minLength: 32
+      #       maxLength: 32
+      #     in: path
+      #     name: id
+      #     required: false
+      requestBody:
+        description: User Request Body
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserBase"
+      responses:
+        '200':
+          description: Successful response
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserBase"
+      operationId: patchApiV1UserBase
+      summary: Update User Base
+      description: Update an existing user's information.
+      tags:
+        - User
+    delete:
+      # parameters:
+      #   - description: |-
+      #       Clerk User ID (Optional). If not provided,
+      #                           the current user's ID will be used.
+      #     schema:
+      #       type: string
+      #       title: User ID
+      #       minLength: 32
+      #       maxLength: 32
+      #     in: path
+      #     name: id
+      #     required: false
+      responses:
+        '200':
+          $ref: '#/components/responses/successResponse'
+      operationId: getApiV1UsersById
+      summary: Delete User
+      description: Delete user by Clerk ID.
+      tags:
+        - User
+  /users/subscriptions:
+    patch:
+      # parameters:
+      #   - description: |-
+      #       Clerk User ID (Optional). If not provided,
+      #                           the current user's ID will be used.
+      #     schema:
+      #       type: string
+      #       title: User ID
+      #       minLength: 32
+      #       maxLength: 32
+      #     in: path
+      #     name: id
+      #     required: false
+      requestBody:
+        description: User Subscription Request Body
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserSubscription"
+      responses:
+        '200':
+          description: Successful response
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSubscription"
+      operationId: patchApiV1UserSubscription
+      summary: Update User Subscription
+      description: Update an existing user's subscription.
+      tags:
+        - User
+  /users/notifications:
+    patch:
+      # parameters:
+      #   - description: |-
+      #       Clerk User ID (Optional). If not provided,
+      #                           the current user's ID will be used.
+      #     schema:
+      #       type: string
+      #       title: User ID
+      #       minLength: 32
+      #       maxLength: 32
+      #     in: path
+      #     name: id
+      #     required: false
+      requestBody:
+        description: User Notifications Request Body
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserNotifications"
+      responses:
+        '200':
+          description: Successful response
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserNotifications"
+      operationId: patchApiV1UserNotifications
+      summary: Update User Notifications
+      description: Update an existing user's notifications preference.
+      tags:
+        - User
+  /pets:
+    get:
+      responses:
+        '200':
+          $ref: '#/components/responses/pets.getResponse'
+      operationId: getApiV1PetsByID
+      summary: Get All Pets
+      description: Get all pets from a user.
+      tags:
+        - Pet
+  /pets/{id}:
+    get:
+      parameters:
+        - description: Pet ID.
+          schema:
+            type: string
+            title: Pet ID
+            minLength: 32
+            maxLength: 32
+          in: path
+          name: id
+          required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/pets.getResponse'
+      operationId: getApiV1PetsByID
+      summary: Get Pet by ID
+      description: Get Pet by ID.
+      tags:
+        - Pet
+    post:
+      requestBody:
+        $ref: "#/components/requestBodies/pets.createRequest"
+      responses:
+        '200':
+          $ref: '#/components/responses/pets.getResponse'
+      operationId: postApiV1PetsByID
+      summary: Create Pet
+      description: Create new pet.
+      tags:
+        - Pet
+    patch:
+      parameters:
+        - description: Pet ID.
+          schema:
+            type: string
+            title: Pet ID
+            minLength: 32
+            maxLength: 32
+          in: path
+          name: id
+          required: true
+      requestBody:
+        description: Pet Request Body
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetBase"
+      responses:
+        '200':
+          description: Successful response
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetBase"
+      operationId: patchApiV1PetBase
+      summary: Update Pet Base
+      description: Update an existing pet's information.
+      tags:
+        - Pet
+    delete:
+      parameters:
+        - description: Pet ID.
+          schema:
+            type: string
+            title: User ID
+            minLength: 32
+            maxLength: 32
+          in: path
+          name: id
+          required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/successResponse'
+      operationId: deleteApiV1PetsById
+      summary: Delete Pet
+      description: Delete pet by ID.
+      tags:
+        - Pet
+  /pets/{id}/attributes:
+    patch:
+      parameters:
+        - description: Pet ID.
+          schema:
+            type: string
+            title: Pet ID
+            minLength: 32
+            maxLength: 32
+          in: path
+          name: id
+          required: true
+      requestBody:
+        description: Pet Attribute Request Body
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetAttributes"
+      responses:
+        '200':
+          description: Successful response
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetAttributes"
+      operationId: patchApiV1PetAttributes
+      summary: Update Pet Attributes
+      description: Update an existing pet's attriubets.
+      tags:
+        - Pet
+  /pets/{id}/link/{user_id}:
+    post:
+      parameters:
+        - description: Pet ID.
+          schema:
+            type: string
+            title: Pet ID
+            minLength: 32
+            maxLength: 32
+          in: path
+          name: id
+          required: true
+        - description: Clerk ID
+          schema:
+            type: string
+            title: Clerk ID of the user you want to link.
+            minLength: 32
+            maxLength: 32
+          in: path
+          name: user_id
+          required: true
+        - description: Type of user
+          schema:
+            title: Type of user you want to link (Dog owner or sitter).
+            anyOf:
+              - const: owner
+                type: string
+              - const: sitter
+                type: string
+          in: query
+          name: type
+          required: false
+      requestBody:
+        description: Request body for pet attribute.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetAttributes"
+      responses:
+        '200':
+          $ref: "#/components/responses/successResponse"
+      operationId: postApiV1PetOwnerLink
+      summary: Link Pet to a User
+      description: Link a pet to either a dog owner/dog sitter.
+      tags:
+        - Pet
+  /assistant/threads/{thread_id}:
+    post:
+      parameters:
+        - description: Thread ID.
+          schema:
+            type: string
+            title: Pet ID
+            minLength: 36
+            maxLength: 36
+          in: path
+          name: thread_id
+          required: true
+      requestBody:
+        $ref: "#/components/requestBodies/assistant.createThread"
+      responses:
+        '200':
+          $ref: "#/components/responses/successResponse"
+      operationId: postApiV1AssistantThreadCreate
+      summary: Link Thread to a User
+      description: Link a thread to an existing user.
+      tags:
+        - Threads
+    patch:
+      parameters:
+        - description: Thread ID.
+          schema:
+            type: string
+            title: Pet ID
+            minLength: 36
+            maxLength: 36
+          in: path
+          name: thread_id
+          required: true
+      requestBody:
+        $ref: "#/components/requestBodies/assistant.createThread"
+      responses:
+        '200':
+          $ref: "#/components/responses/successResponse"
+      operationId: patchApiV1AssistantThreadCreate
+      summary: Update Title of a Thread
+      description: Update the title of a thread.
+      tags:
+        - Threads
+    delete:
+      parameters:
+        - description: Thread ID.
+          schema:
+            type: string
+            title: Pet ID
+            minLength: 36
+            maxLength: 36
+          in: path
+          name: thread_id
+          required: true
+      responses:
+        '200':
+          $ref: "#/components/responses/successResponse"
+      operationId: deleteApiV1AssistantThreadCreate
+      summary: Unlink a Thread from a User
+      description: Unlink a thread from a user.
+      tags:
+        - Threads
+components:
+  requestBodies:
+    users.createRequest:
+      description: Request body for creating a user.
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            allOf:
+              - title: User
+                description: User
+                $ref: '#/components/schemas/UserBase'
+              - title: Notifications
+                description: User's notifications
+                $ref: '#/components/schemas/UserNotifications'
+              - title: Subscription
+                description: User's subscription
+                $ref: '#/components/schemas/UserSubscription'
+    pets.createRequest:
+      description: Request body for creating a pet.
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            allOf:
+              - title: Pet
+                description: Pet
+                $ref: '#/components/schemas/PetBase'
+              - title: PetAttributes
+                description: Attributes of the pet
+                $ref: '#/components/schemas/PetAttributes'
+    assistant.createThread:
+      description: Request body for linking a thread to user.
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            allOf:
+              - title: Title
+                description: Title of the thread.
+                type: object
+                properties:
+                  title:
+                    maxLength: 32
+                    type: string
+                    description: Thread title.
+                    examples:
+                      - "Thread Title"
+  responses:
+    successResponse:
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                description: Message if the operation is successful.
+                example: success
+                type: string
+            required:
+              - status
+    users.getResponse:
+      description: Successful response retrieving a user.
+      content:
+        application/json:
+          schema:
+            type: object
+            allOf:
+              - type: object
+                properties:
+                  externalID:
+                    maxLength: 32
+                    type: string
+                    description: Clerk ID of the user
+                    examples:
+                      - user_2ruHSXCzfIRreR2tpttVQBl512a
+              - title: User
+                description: User
+                type: object
+                $ref: '#/components/schemas/UserBase'
+              - title: Notifications
+                description: User's notifications
+                type: object
+                $ref: '#/components/schemas/UserNotifications'
+              - title: Subscription
+                description: User's subscription
+                type: object
+                $ref: '#/components/schemas/UserSubscription'
+    pets.getResponse:
+      description: Successful response retrieving a pet.
+      content:
+        application/json:
+          schema:
+            type: object
+            allOf:
+              - type: object
+                properties:
+                  petID:
+                    maxLength: 32
+                    type: string
+                    description: Pet ID of the pet.
+                    examples:
+                      - 5caf0057-8b20-421f-ab9a-572b294e350b
+              - title: Pet
+                description: Pet
+                type: object
+                $ref: '#/components/schemas/PetBase'
+              - title: Attributes
+                description: Pet's attributes
+                type: object
+                $ref: '#/components/schemas/PetAttributes'
+    healthcheck.v1:
+      description: Successful response of health check.
+      type: object
+      content:
+        application/json:
+          schema:
+            properties:
+              message:
+                description: Message if the endpoint for v1 is running
+                example: Welcome to Dogy API v1
+                type: string
+            required:
+              - message
+  schemas:
+    UserBase:
+      type: object
+      properties:
+        name:
+          maxLength: 255
+          type: string
+          description: User's name
+          examples:
+            - John Doe
+        timezone:
+          maxLength: 30
+          type: string
+          description: User's timezone
+          examples:
+            - Europe/Sweden
+        gender:
+          anyOf:
+            - const: male
+              type: string
+            - const: female
+              type: string
+          description: Gender of the user
+          examples:
+            - male
+        hasOnboarded:
+          type: boolean
+          description: Has the user onboarded?
+          examples:
+            - false
+      required:
+        - name
+        - timezone
+        - gender
+        - hasOnboarded
+    UserNotifications:
+      type: object
+      properties:
+        notifications:
+          title: UserNotifications
+          description: User notifications schema
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              examples:
+                - true
+            isRegistered:
+              type: boolean
+              examples:
+                - false
+            dailyEnabled:
+              type: boolean
+              examples:
+                - true
+            playtimeEnabled:
+              type: boolean
+              examples:
+                - true
+          required:
+            - enabled
+    UserSubscription:
+      type: object
+      properties:
+        subscription:
+          title: UserSubscription
+          description: User subscription schema
+          type: object
+          properties:
+            trialStartDate:
+              type: string
+              examples:
+                - '2025-01-22'
+            subscriptionType:
+              anyOf:
+                - const: active
+                  type: string
+                - const: inactive
+                  type: string
+                - const: unknown
+                  type: string
+              examples:
+                - active
+            isTrialMode:
+              type: boolean
+              examples:
+                - false
+          required:
+            - trialStartDate
+            - subscriptionType
+    PetBase:
+      type: object
+      properties:
+        name:
+          maxLength: 255
+          type: string
+          description: Pet's name.
+          examples:
+            - Bou
+        age:
+          maxLength: 3
+          type: number
+          format: int32
+          description: Pet's age.
+          examples:
+            - 7
+        gender:
+          anyOf:
+            - const: male
+              type: string
+            - const: female
+              type: string
+          description: Gender of the pet.
+          examples:
+            - male
+        size:
+          anyOf:
+            - const: small
+              type: string
+            - const: medium
+              type: string
+            - const: large
+              type: string
+          description: Size of the pet.
+          examples:
+            - large
+        photoUrl:
+          type: string
+          description: Photo URL of the pet.
+          examples:
+            - "https://exampleimage.com/sergey.jpg"
+        weight:
+          type: number
+          format: float
+          description: The weight of the pet.
+          examples:
+            - 10.04
+        weightUnit:
+          type: string
+          description: The weight unit of the pet (kg by default).
+          anyOf:
+            - const: kg
+              type: string
+            - const: lbs
+              type: string
+          examples:
+            - kg
+      required:
+        - name
+        - age
+        - weight
+        - photoUrl
+        - size
+        - gender
+    PetAttributes:
+      type: object
+      properties:
+        attributes:
+          title: PetAttributes
+          description: Pet attributes schema
+          type: object
+          properties:
+            aggressionLevels:
+              type: array
+              description: Aggression levels of the pet.
+              examples:
+                - ["Mild aggression under specific circumstances", "Guarding behavior"]
+            allergies:
+              type: array
+              description: Allergies of the pet.
+              examples:
+                - ["Yeast", "Rice"]
+            breeds:
+              type: array
+              description: Breeds of the pet.
+              examples:
+                - ["Akita", "Chihuahua"]
+            behaviors:
+              type: array
+              description: Behaviours of the pet.
+              examples:
+                - ["Relaxed", "Curious", "Obedient"]
+            interactions:
+              type: array
+              description: Interactions of the pet.
+              examples:
+                - ["Loves other dogs", "Enjoys large groups"]
+            personalities:
+              type: array
+              description: Personalities of the pet.
+              examples:
+                - ["Calm", "Reserved"]
+            reactivities:
+              type: array
+              description: Reactivities of the pet.
+              examples:
+                - ["Reactive to strangers", "Reactive to noises"]
+            sterilized:
+              type: boolean
+              description: Whether or not the pet is sterilized.
+              examples:
+                - false
