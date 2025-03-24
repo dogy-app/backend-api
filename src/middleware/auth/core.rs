@@ -34,7 +34,6 @@ fn decode_jwt(jwt_token: &str) -> Result<TokenData<Claims>> {
 }
 
 pub fn authenticate_user(auth_header: &str) -> Result<CurrentUser> {
-    println!("--> Decoding token...");
     let user_info = decode_jwt(auth_header).map_err(|_| Error::CannotDecodeToken);
     match user_info {
         Ok(user) => Ok(CurrentUser {
