@@ -9,7 +9,6 @@ use super::layer::CurrentUser;
 #[allow(dead_code)]
 #[derive(Deserialize)]
 struct Claims {
-    pub azp: String,
     pub role: Option<String>,
     pub sub: String,
     pub iss: String,
