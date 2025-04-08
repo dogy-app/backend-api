@@ -1,16 +1,3 @@
-# Use a minimal base image for building
-FROM rust:1.85 AS builder
-
-# Set the working directory
-WORKDIR /app
-
-# Cache dependencies
-COPY Cargo.toml Cargo.lock ./
-COPY src/ ./src
-
-# Pre-build dependencies (optimized caching)
-RUN cargo build --release --bin dogy-backend-api
-
 # Create a minimal final image
 FROM debian:bookworm-slim
 
@@ -18,13 +5,16 @@ FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory
-WORKDIR /app
+WORKDIR /usr/local/application
 
 # Copy the built binary from the builder stage
-COPY --from=builder /app/target/release/dogy-backend-api ./
+COPY target/release/dogy-backend-api /usr/local/bin/dogy-backend-api
 
 # Set permissions
-RUN chmod +x ./dogy-backend-api
+RUN chmod +x /usr/local/bin/dogy-backend-api
+
+# Expose Port
+EXPOSE 8080
 
 # Define the entry point
-ENTRYPOINT ["./dogy-backend-api"]
+ENTRYPOINT ["dogy-backend-api"]
