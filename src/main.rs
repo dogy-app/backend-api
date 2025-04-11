@@ -3,10 +3,7 @@ use std::sync::Arc;
 use axum::{routing::get, Json, Router};
 use config::load_config;
 use serde_json::json;
-use service::{
-    assistant::routes::root_assistant_routes, pets::routes::root_pet_routes,
-    users::routes::root_user_routes,
-};
+use service::api_v1_routes;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use tracing_subscriber::EnvFilter;
 
@@ -48,14 +45,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             "/",
             get(|| async { Json(json!({ "message": "Welcome to Dogy API" })) }),
         )
-        .nest("/api/v1", root_user_routes(shared_state.clone()).await)
-        .nest("/api/v1", root_pet_routes(shared_state.clone()).await)
-        .nest("/api/v1", root_assistant_routes(shared_state.clone()).await)
-        .with_state(shared_state)
-        .nest(
-            "/api/v1",
-            service::healthcheck::routes::healthcheck_routes().await,
-        );
+        .nest("/api/v1", api_v1_routes(shared_state.clone()).await);
 
     // run our app with hyper, listening globally on port 8080
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.PORT))
