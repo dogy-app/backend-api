@@ -52,6 +52,7 @@ pub enum PetAggressionLevel {
 #[derive(Serialize, Type, Deserialize)]
 #[sqlx(type_name = "pet_allergy")]
 pub enum PetAllergy {
+    None,
     Beef,
     Chicken,
     Lamb,
