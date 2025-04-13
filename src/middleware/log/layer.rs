@@ -1,18 +1,21 @@
 use std::sync::Arc;
 
-use crate::{middleware::log::core::ClientErrorResponse, Error};
+use crate::{
+    middleware::{auth::layer::CurrentUser, log::core::ClientErrorResponse},
+    Error,
+};
 use axum::{
     http::{Method, Uri},
     response::{IntoResponse, Response},
     Json,
 };
 use serde_json::to_value;
-use tracing::error;
 
 use super::core::log_request;
 
 // Logging and Response Mapper Middleware
 pub async fn log_middleware(uri: Uri, req_method: Method, res: Response) -> Response {
+    let current_user = res.extensions().get::<CurrentUser>();
     let web_error = res.extensions().get::<Arc<Error>>().map(Arc::as_ref);
     let client_status_error = web_error.map(|se| se.client_status_error());
 
@@ -35,7 +38,7 @@ pub async fn log_middleware(uri: Uri, req_method: Method, res: Response) -> Resp
         });
 
     let client_error = client_status_error.unzip().1;
-    let _ = log_request(None, uri, req_method, web_error, client_error);
+    let _ = log_request(current_user, uri, req_method, web_error, client_error);
 
     error_response.unwrap_or(res)
 }

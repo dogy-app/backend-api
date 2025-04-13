@@ -1,4 +1,7 @@
-use crate::error::{ClientError, Error, Result};
+use crate::{
+    error::{ClientError, Error, Result},
+    middleware::auth::layer::CurrentUser,
+};
 use axum::http::Uri;
 use reqwest::Method;
 use serde::Serialize;
@@ -15,7 +18,7 @@ pub struct ClientErrorResponse {
 }
 
 pub fn log_request(
-    user_id: Option<String>,
+    current_user: Option<&CurrentUser>,
     req_path: Uri,
     req_method: Method,
     web_error: Option<&Error>,
@@ -23,32 +26,36 @@ pub fn log_request(
 ) -> Result<()> {
     let req_id = Uuid::now_v7();
     let req_path_str = req_path.to_string();
+    let user_id = if let Some(user) = current_user {
+        let current_user_id = user.user_id.clone();
+        println!("{current_user_id}");
+        current_user_id
+    } else {
+        "None".to_string()
+    };
 
     let error_details = serde_json::to_value(web_error)
         .ok()
         .and_then(|mut v| v.get_mut("details").map(|v| v.take()));
 
-    match web_error {
-        Some(_) => {
-            error!(
+    if web_error.is_some() {
+        error!(
             id = %req_id,
-            user_id = "None",
+            user_id = %user_id,
             path = %req_path_str,
             method = %req_method.as_str(),
             client_error_code = %client_error.map(|e| e.as_ref().to_string()).unwrap(),
             error_code = %web_error.map(|e| e.to_string()).unwrap(),
             "{error_details:?}"
-            );
-        }
-        None => {
-            info!(
-                id = %req_id,
-                user_id = "None",
-                path = %req_path_str,
-                method = %req_method.as_str()
-            );
-        }
-    }
+        );
+    } else {
+        info!(
+            id = %req_id,
+            user_id = %user_id,
+            path = %req_path_str,
+            method = %req_method.as_str()
+        );
+    };
 
     Ok(())
 }
