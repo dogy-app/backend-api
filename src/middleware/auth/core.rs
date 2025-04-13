@@ -30,11 +30,11 @@ fn decode_jwt(jwt_token: &str) -> Result<TokenData<Claims>> {
         .map_err(|_| Error::InvalidDecodingKey)?,
         &Validation::new(jsonwebtoken::Algorithm::RS256),
     )
-    .map_err(|_| Error::CannotDecodeToken)
+    .map_err(|_| Error::InvalidToken)
 }
 
 pub fn authenticate_user(auth_header: &str) -> Result<CurrentUser> {
-    let user_info = decode_jwt(auth_header).map_err(|_| Error::CannotDecodeToken);
+    let user_info = decode_jwt(auth_header).map_err(|_| Error::InvalidToken);
     match user_info {
         Ok(user) => Ok(CurrentUser {
             user_id: user.claims.sub,

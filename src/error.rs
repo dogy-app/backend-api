@@ -27,12 +27,14 @@ pub enum Error {
 pub enum ClientError {
     // Auth
     MISSING_AUTH_HEADER,
+    NO_BEARER_PREFIX,
+    INVALID_CREDENTIALS,
     SERVICE_ERROR,
 }
 
 impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
-        debug!("{:<12} - model::Error {self:?}", "INTO_RES");
+        debug!("{self:?}");
 
         let mut response = StatusCode::INTERNAL_SERVER_ERROR.into_response();
 
@@ -48,7 +50,10 @@ impl Error {
                 (StatusCode::UNAUTHORIZED, ClientError::MISSING_AUTH_HEADER)
             }
             Error::Auth(auth::Error::NoBearerPrefix) => {
-                (StatusCode::UNAUTHORIZED, ClientError::SERVICE_ERROR)
+                (StatusCode::UNAUTHORIZED, ClientError::NO_BEARER_PREFIX)
+            }
+            Error::Auth(auth::Error::InvalidToken) => {
+                (StatusCode::UNAUTHORIZED, ClientError::INVALID_CREDENTIALS)
             }
             _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,
