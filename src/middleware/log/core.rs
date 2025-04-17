@@ -27,9 +27,7 @@ pub fn log_request(
     let req_id = Uuid::now_v7();
     let req_path_str = req_path.to_string();
     let user_id = if let Some(user) = current_user {
-        let current_user_id = user.user_id.clone();
-        println!("{current_user_id}");
-        current_user_id
+        user.user_id.clone()
     } else {
         "None".to_string()
     };

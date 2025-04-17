@@ -66,7 +66,6 @@ pub async fn create_user(
     .unwrap();
 
     txn.commit().await.unwrap();
-    println!("--> Created User: {}", &current_user.user_id);
 
     user.base.external_id = current_user.user_id;
 
