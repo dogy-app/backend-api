@@ -6,7 +6,8 @@ use uuid::Uuid;
 
 use crate::middleware::auth::layer::CurrentUser;
 use crate::service::users::models::JoinedFullUser;
-use crate::AppState;
+use crate::Result;
+use crate::{AppState, PayloadJson};
 
 use super::models::{
     FullUser, User, UserNotification, UserNotificationUpdate, UserSubscription,
@@ -17,9 +18,9 @@ pub async fn create_user(
     Extension(current_user): Extension<CurrentUser>,
     State(state): State<AppState>,
     Json(mut user): Json<FullUser>,
-) -> Json<FullUser> {
+) -> Result<Json<FullUser>> {
     let conn = &*state.db;
-    let mut txn = conn.begin().await.unwrap();
+    let mut txn = conn.begin().await.map_err(super::Error::from)?;
 
     // Inserting Base User
     let user_id: (Uuid,) = sqlx::query_as(
@@ -34,7 +35,7 @@ pub async fn create_user(
     .bind(user.base.has_onboarded)
     .fetch_one(&mut *txn)
     .await
-    .unwrap();
+    .map_err(super::Error::from)?;
 
     sqlx::query(
         r#"INSERT
@@ -48,7 +49,7 @@ pub async fn create_user(
     .bind(user.subscription.is_trial_mode)
     .execute(&mut *txn)
     .await
-    .unwrap();
+    .map_err(super::Error::from)?;
 
     sqlx::query(
         r#"INSERT
@@ -63,20 +64,19 @@ pub async fn create_user(
     .bind(user.notifications.playtime_enabled)
     .execute(&mut *txn)
     .await
-    .unwrap();
+    .map_err(super::Error::from)?;
 
-    txn.commit().await.unwrap();
-    println!("--> Created User: {}", &current_user.user_id);
+    txn.commit().await.map_err(super::Error::from)?;
 
     user.base.external_id = current_user.user_id;
 
-    Json(user)
+    Ok(Json(user))
 }
 
 pub async fn get_user(
     State(state): State<AppState>,
     Extension(current_user): Extension<CurrentUser>,
-) -> Json<FullUser> {
+) -> Result<Json<FullUser>> {
     let conn = &*state.db;
     let query = r#"
     SELECT u.*, us.trial_start_date, us.subscription_type, us.is_trial_mode,
@@ -91,7 +91,7 @@ pub async fn get_user(
         .bind(current_user.internal_id.unwrap())
         .fetch_one(conn)
         .await
-        .unwrap();
+        .map_err(super::Error::from)?;
 
     let full_user = FullUser {
         base: User {
@@ -114,14 +114,15 @@ pub async fn get_user(
         },
     };
 
-    Json(full_user)
+    Ok(Json(full_user))
 }
 
 pub async fn update_user_base(
     State(state): State<AppState>,
     Extension(current_user): Extension<CurrentUser>,
-    Json(user): Json<UserUpdate>,
-) -> Json<UserUpdate> {
+    payload: PayloadJson<UserUpdate>,
+) -> Result<Json<UserUpdate>> {
+    let Json(user) = payload?;
     let conn = &*state.db;
     let query = r#"
     UPDATE users
@@ -141,16 +142,17 @@ pub async fn update_user_base(
         .bind(user.has_onboarded)
         .execute(conn)
         .await
-        .unwrap();
+        .map_err(super::Error::from)?;
 
-    Json(user)
+    Ok(Json(user))
 }
 
 pub async fn update_user_subscription(
     State(state): State<AppState>,
     Extension(current_user): Extension<CurrentUser>,
-    Json(user_sub): Json<UserSubscriptionUpdate>,
-) -> Json<UserSubscriptionUpdate> {
+    payload: PayloadJson<UserSubscriptionUpdate>,
+) -> Result<Json<UserSubscriptionUpdate>> {
+    let Json(user_sub) = payload?;
     let conn = &*state.db;
     let mut query_builder = QueryBuilder::new(
         r#"
@@ -182,16 +184,17 @@ pub async fn update_user_subscription(
         .push(";");
 
     let query = query_builder.build();
-    query.execute(conn).await.unwrap();
+    query.execute(conn).await.map_err(super::Error::from)?;
 
-    Json(user_sub)
+    Ok(Json(user_sub))
 }
 
 pub async fn update_user_notification(
     State(state): State<AppState>,
     Extension(current_user): Extension<CurrentUser>,
-    Json(user_notif): Json<UserNotificationUpdate>,
-) -> Json<UserNotificationUpdate> {
+    payload: PayloadJson<UserNotificationUpdate>,
+) -> Result<Json<UserNotificationUpdate>> {
+    let Json(user_notif) = payload?;
     let conn = &*state.db;
     let query = r#"
     UPDATE user_notifications
@@ -211,21 +214,22 @@ pub async fn update_user_notification(
         .bind(user_notif.playtime_enabled)
         .execute(conn)
         .await
-        .unwrap();
+        .map_err(super::Error::from)?;
 
-    Json(user_notif)
+    Ok(Json(user_notif))
 }
 
 pub async fn delete_user(
     State(state): State<AppState>,
     Extension(current_user): Extension<CurrentUser>,
-) -> Json<Value> {
+) -> Result<Json<Value>> {
     let conn = &*state.db;
+
     sqlx::query("DELETE FROM users WHERE id = $1;")
         .bind(current_user.internal_id.unwrap())
         .execute(conn)
         .await
-        .unwrap();
+        .map_err(super::Error::from)?;
 
-    Json(json!({ "message": "User deleted successfully" }))
+    Ok(Json(json!({ "message": "User deleted successfully" })))
 }
