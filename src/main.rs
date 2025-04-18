@@ -1,3 +1,5 @@
+//! Main entry point for the Dogy API server.
+//! This module sets up the server, database connection, and routes.
 use std::sync::Arc;
 use tracing::info;
 
@@ -16,13 +18,27 @@ mod error;
 mod middleware;
 mod service;
 
+/// This is the application state that is shared across all axum handlers.
+///
+/// Remember to not put sensitive information (eg. env var), large objects (files/embedding), or
+/// request-specific data in here (auth bearer token).
 #[derive(Clone)]
 struct AppState {
+    /// Postgres Database connection pool. Be sure that the `DATABASE_URL` from Neon does not have
+    /// **Connection Pooling** enabled.
     db: Arc<PgPool>,
 }
 
+/// Main function to start the server.
+///
+/// Tracing is initialized based on the build profile.
+/// `debug` for debug builds and `info` for release builds.
+/// For debug builds, the logs are printed in a human-readable format.
+/// For release builds, the logs are printed in a JSON format.
+///
+/// Config is also loaded from the `.env` file using [`load_config()`].
 #[tokio::main]
-async fn main() -> Result<()> {
+pub async fn main() -> Result<()> {
     #[cfg(debug_assertions)]
     tracing_subscriber::fmt()
         .with_target(false)
@@ -37,7 +53,10 @@ async fn main() -> Result<()> {
         .init();
 
     info!("Starting Server");
+
+    // Loads config from .env file.
     let config = load_config();
+
     info!("Connecting to database...");
     let pool = PgPoolOptions::new()
         .max_connections(10)
