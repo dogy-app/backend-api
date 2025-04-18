@@ -2,6 +2,9 @@
 name = "dogy-backend-api"
 version = "0.2.2"
 edition = "2024"
+authors = ["Sheape <sheape@dogy.app>"]
+description = "Backend API for Dogy"
+repository = "https://github.com/dogy-app/backend-api"
 
 [dependencies]
 axum = "0.8.1"
