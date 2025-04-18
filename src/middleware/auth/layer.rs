@@ -46,22 +46,21 @@ pub async fn get_internal_id(
     let current_user = req.extensions_mut().get::<CurrentUser>().unwrap().clone();
 
     let query = "SELECT id FROM users where external_id = $1";
-    let internal_id: Option<Uuid> = sqlx::query_scalar(query)
-        .bind(&current_user.user_id)
+    let user_id = &current_user.user_id;
+    let internal_id: Uuid = sqlx::query_scalar(query)
+        .bind(user_id)
         .fetch_one(&*state.db)
         .await
-        .unwrap_or(None);
+        .unwrap_or(None)
+        .ok_or(Error::Auth(AuthError::UserNotFound {
+            user_id: user_id.to_string(),
+        }))?;
 
-    if internal_id.is_some() {
-        let updated_user = CurrentUser {
-            internal_id,
-            ..current_user
-        };
-        debug!("Current user: {:?}", updated_user);
-        req.extensions_mut().insert(updated_user);
-        Ok(next.run(req).await)
-    } else {
-        // TODO: Change Error to UserNotFound
-        Err(Error::Auth(AuthError::AuthFailed))
-    }
+    let updated_user = CurrentUser {
+        internal_id: Some(internal_id),
+        ..current_user
+    };
+    debug!("Current user: {:?}", updated_user);
+    req.extensions_mut().insert(updated_user);
+    Ok(next.run(req).await)
 }

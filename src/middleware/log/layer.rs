@@ -24,12 +24,12 @@ pub async fn log_middleware(uri: Uri, req_method: Method, res: Response) -> Resp
         .map(|(status_code, client_error)| {
             let client_error = to_value(client_error).ok();
             let code = client_error.as_ref().and_then(|v| v.get("code"));
-            let detail = client_error.as_ref().and_then(|v| v.get("detail"));
+            let detail = client_error.as_ref().and_then(|v| v.get("details"));
 
             let client_error_body = ClientErrorResponse {
                 status: "error".to_string(),
                 code: code.cloned(),
-                detail: detail.cloned(),
+                details: detail.cloned(),
             };
 
             //error!(code = ?client_error_body.code, status = "error", detail = ?client_error_body.detail, "Client error response");

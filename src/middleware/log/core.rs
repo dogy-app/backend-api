@@ -14,7 +14,7 @@ pub struct ClientErrorResponse {
     pub status: String,
     pub code: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub detail: Option<Value>,
+    pub details: Option<Value>,
 }
 
 pub fn log_request(
@@ -42,8 +42,8 @@ pub fn log_request(
             user_id = %user_id,
             path = %req_path_str,
             method = %req_method.as_str(),
-            client_error_code = %client_error.map(|e| e.as_ref().to_string()).unwrap(),
-            error_code = %web_error.map(|e| e.to_string()).unwrap(),
+            client_error = %client_error.map(|e| e.as_ref().to_string()).unwrap(),
+            server_error = %web_error.map(|e| e.to_string()).unwrap(),
             "{error_details:?}"
         );
     } else {

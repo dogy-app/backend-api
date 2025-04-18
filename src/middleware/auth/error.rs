@@ -6,7 +6,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 #[serde_as]
 #[derive(Debug, Serialize, From)]
-#[serde(tag = "code", content = "detail")]
+#[serde(tag = "code", content = "details")]
 pub enum Error {
     // Internals
     InvalidDecodingKey,
@@ -15,6 +15,9 @@ pub enum Error {
     // Middleware-related
     MissingAuthHeader,
     NoBearerPrefix,
+
+    // User-related
+    UserNotFound { user_id: String },
 
     // Generic
     AuthFailed,
