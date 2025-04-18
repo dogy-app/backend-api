@@ -1,3 +1,4 @@
+//! This module contains the axum middleware layer for authentication.
 use axum::extract::State;
 use axum::{extract::Request, http::header, middleware::Next, response::Response};
 use tracing::debug;
@@ -9,14 +10,28 @@ use super::core::authenticate_user;
 use super::Error as AuthError;
 use crate::{Error, Result};
 
+/// Represents the metadata about the current user.
+///
+/// This is passed throughout the middlewares and also handlers.
 #[derive(Clone, Debug)]
 pub struct CurrentUser {
+    /// Clerk User ID of the current user.
     pub user_id: String,
+
+    /// Clerk Role (normally None for regular users) of the current user.
     #[allow(dead_code)]
     pub role: Option<String>,
+
+    /// Database User ID of the current user. Initially, this should be None as we will retrieve
+    /// the internal ID from the database after authentication occurs.
     pub internal_id: Option<Uuid>,
 }
 
+/// Axum middleware for authentication.
+///
+/// Accepts `Authorization` header from a request and validates it.
+/// Afterwards, it'll decode the JWT token and inject the user's details
+/// into the request.
 pub async fn auth_middleware(mut req: Request, next: Next) -> Result<Response> {
     // Retrieve authorization header
     let auth_header = req
@@ -38,6 +53,10 @@ pub async fn auth_middleware(mut req: Request, next: Next) -> Result<Response> {
     Ok(res)
 }
 
+/// Axum middleware for retrieving the internal ID for the current user.
+///
+/// If it passes through authentication but fails to retrieve the internal ID of the user,
+/// it'll simply return a [`AuthError::UserNotFound`] error.
 pub async fn get_internal_id(
     State(state): State<AppState>,
     mut req: Request,

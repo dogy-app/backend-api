@@ -1,3 +1,4 @@
+//! This module contains the core functionality of authentication middleware.
 use jsonwebtoken::{decode, DecodingKey, TokenData, Validation};
 use serde::Deserialize;
 
@@ -6,18 +7,34 @@ use crate::config::load_config;
 use super::error::{Error, Result};
 use super::layer::CurrentUser;
 
+/// Represents the payload after decoding a token.
 #[allow(dead_code)]
 #[derive(Deserialize)]
-struct Claims {
+pub struct Claims {
+    /// Role of the authenticated user. Can either be None or a valid clerk role such as
+    /// `org:admin`.
     pub role: Option<String>,
+
+    /// Clerk user ID of the authenticated user.
     pub sub: String,
+
+    /// Domain of the clerk backend.
     pub iss: String,
+
+    /// Unique ID of the token.
     pub jti: String,
+
+    /// Expiration timestamp of the token.
     pub exp: usize,
+
+    /// Timestamp when the token was issued.
     pub iat: usize,
+
+    /// Timestamp before the token is invalid.
     pub nbf: usize,
 }
 
+/// Decodes a JWT token into a [`TokenData<Claims>`].
 fn decode_jwt(jwt_token: &str) -> Result<TokenData<Claims>> {
     let config = load_config();
 
@@ -33,6 +50,8 @@ fn decode_jwt(jwt_token: &str) -> Result<TokenData<Claims>> {
     .map_err(|_| Error::InvalidToken)
 }
 
+/// Retrieve the user information from a JWT token. Do not include the `Bearer` prefix, only the
+/// actual JWT token.
 pub fn authenticate_user(auth_header: &str) -> Result<CurrentUser> {
     let user_info = decode_jwt(auth_header).map_err(|_| Error::InvalidToken);
     match user_info {
