@@ -9,7 +9,7 @@ use service::api_v1_routes;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use tracing_subscriber::EnvFilter;
 
-pub use self::error::{Error, Result};
+pub use self::error::{Error, PayloadJson, Result};
 
 mod config;
 mod error;
@@ -23,9 +23,17 @@ struct AppState {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    #[cfg(debug_assertions)]
     tracing_subscriber::fmt()
         .with_target(false)
-        .with_env_filter(EnvFilter::from_default_env())
+        .with_env_filter(EnvFilter::new("debug"))
+        .init();
+
+    #[cfg(not(debug_assertions))]
+    tracing_subscriber::fmt()
+        .json()
+        .with_target(false)
+        .with_env_filter(EnvFilter::new("info"))
         .init();
 
     info!("Starting Server");
