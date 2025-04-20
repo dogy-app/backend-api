@@ -22,6 +22,9 @@ pub struct Config {
     pub LANGGRAPH_ASSISTANT_ENDPOINT: String,
     pub CLERK_RSA_MODULUS: String,
     pub CLERK_RSA_EXPONENT: String,
+    pub STORAGE_ACCOUNT: String,
+    pub STORAGE_ACCESS_KEY: String,
+    pub STORAGE_CONTAINER: String,
     pub PORT: String,
 }
 
@@ -32,6 +35,9 @@ impl Config {
             LANGGRAPH_ASSISTANT_ENDPOINT: get_env("LANGGRAPH_ASSISTANT_ENDPOINT")?,
             CLERK_RSA_MODULUS: get_env("CLERK_RSA_MODULUS")?,
             CLERK_RSA_EXPONENT: get_env("CLERK_RSA_EXPONENT")?,
+            STORAGE_ACCOUNT: get_env("STORAGE_ACCOUNT")?,
+            STORAGE_ACCESS_KEY: get_env("STORAGE_ACCESS_KEY")?,
+            STORAGE_CONTAINER: get_env("STORAGE_CONTAINER")?,
             PORT: get_env_opt("PORT", "8080"),
         })
     }
@@ -95,6 +101,10 @@ mod test {
             env::set_var("LANGGRAPH_ASSISTANT_ENDPOINT", "test_assistant_url");
             env::set_var("CLERK_RSA_MODULUS", "test_modulus");
             env::set_var("CLERK_RSA_EXPONENT", "test_exponent");
+            env::set_var("STORAGE_ACCOUNT", "test_storage_acc");
+            env::set_var("STORAGE_ACCESS_KEY", "test_storage_key");
+            env::set_var("STORAGE_CONTAINER", "test_storage_container");
+            env::set_var("STORAGE_URL", "test_storage_url");
         }
 
         let config = Config::from_env().unwrap();
@@ -106,6 +116,9 @@ mod test {
                 CLERK_RSA_MODULUS: "test_modulus".to_string(),
                 LANGGRAPH_ASSISTANT_ENDPOINT: "test_assistant_url".to_string(),
                 DATABASE_URL: "test_db_url".to_string(),
+                STORAGE_ACCOUNT: "test_storage_acc".to_string(),
+                STORAGE_ACCESS_KEY: "test_storage_key".to_string(),
+                STORAGE_CONTAINER: "test_storage_container".to_string(),
             }
         );
     }
@@ -132,6 +145,9 @@ mod test {
             env::set_var("LANGGRAPH_ASSISTANT_ENDPOINT", "test_assistant_url");
             env::set_var("CLERK_RSA_MODULUS", "test_modulus");
             env::set_var("CLERK_RSA_EXPONENT", "test_exponent");
+            env::set_var("STORAGE_ACCOUNT", "test_storage_acc");
+            env::set_var("STORAGE_ACCESS_KEY", "test_storage_key");
+            env::set_var("STORAGE_CONTAINER", "test_storage_container");
         }
 
         let config = load_config();
@@ -143,6 +159,9 @@ mod test {
                 CLERK_RSA_MODULUS: "test_modulus".to_string(),
                 LANGGRAPH_ASSISTANT_ENDPOINT: "test_assistant_url".to_string(),
                 DATABASE_URL: "test_db_url".to_string(),
+                STORAGE_ACCOUNT: "test_storage_acc".to_string(),
+                STORAGE_ACCESS_KEY: "test_storage_key".to_string(),
+                STORAGE_CONTAINER: "test_storage_container".to_string(),
             }
         );
     }
