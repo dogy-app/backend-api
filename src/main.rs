@@ -65,7 +65,8 @@ pub async fn main() -> Result<()> {
         .expect("Failed to create PgPool.");
     info!("Connected to database.");
 
-    //sqlx::migrate!("./migrations").run(&pool).await?;
+    sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+    //sqlx::migrate!("./migrations").undo(&pool, 1).await.unwrap();
     let shared_state = AppState { db: Arc::new(pool) };
 
     let app = Router::new()
