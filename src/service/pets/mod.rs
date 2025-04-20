@@ -1,3 +1,4 @@
 mod handlers;
-mod models;
+pub(in crate::service) mod models;
 pub mod routes;
+pub(in crate::service) mod store;
