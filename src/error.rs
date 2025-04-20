@@ -7,7 +7,10 @@
 
 use std::sync::Arc;
 
-use crate::{middleware::auth, service::users};
+use crate::{
+    middleware::auth,
+    service::{assistant::daily_challenges, users},
+};
 use axum::{extract::rejection::JsonRejection, http::StatusCode, response::IntoResponse, Json};
 use derive_more::From;
 use serde::Serialize;
@@ -62,6 +65,9 @@ pub enum Error {
     /// Errors from [`auth::Error`]
     #[from]
     User(users::Error),
+
+    #[from]
+    DailyChallenge(daily_challenges::Error),
 
     /// Errors from [`serde_json::Error`]
     #[from]
@@ -146,7 +152,7 @@ impl Error {
                 (StatusCode::CONFLICT, ClientError::USER_ALREADY_EXISTS)
             }
             Error::JsonRejection(req_body) => (
-                StatusCode::BAD_REQUEST,
+                StatusCode::UNPROCESSABLE_ENTITY,
                 ClientError::INVALID_REQUEST_BODY(req_body.to_string()),
             ),
             _ => (
