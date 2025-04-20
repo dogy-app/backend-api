@@ -7,7 +7,9 @@ description = "Backend API for Dogy"
 repository = "https://github.com/dogy-app/backend-api"
 
 [dependencies]
-axum = "0.8.1"
+axum = { version = "0.8.1", features = ["multipart"] }
+azure_storage = "0.21.0"
+azure_storage_blobs = "0.21.0"
 chrono = { version = "0.4.40", features = ["serde"] }
 derive_more = { version = "2.0.1", features = ["from", "display"] }
 dotenv = "0.15.0"
