@@ -1,13 +1,16 @@
 use derive_more::From;
 use serde::Serialize;
 use serde_with::{serde_as, DisplayFromStr};
+use uuid::Uuid;
 
 //pub type Result<T> = std::result::Result<T, Error>;
 
 #[serde_as]
 #[derive(Debug, From, Serialize, strum_macros::AsRefStr)]
 pub enum Error {
-    ChallengeAlreadyCompleted,
+    ChallengeAlreadyCompleted {
+        challenge_id: Uuid,
+    },
     MissingTimezoneForUser,
 
     #[from]

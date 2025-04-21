@@ -20,7 +20,7 @@ use crate::Result;
 
 use super::store::{
     retrieve_past_challenges, retrieve_timezone_from_user, save_daily_challenge,
-    DAILY_CHALLENGE_PROMPT,
+    verify_daily_challenge_existence, DAILY_CHALLENGE_PROMPT,
 };
 
 #[derive(Serialize)]
@@ -108,6 +108,11 @@ pub async fn create_daily_challenge(
     let internal_user_id = current_user.internal_id.unwrap();
     let conn = &*state.db;
     let timezone = retrieve_timezone_from_user(conn, internal_user_id).await?;
+
+    let mut txn1 = conn.begin().await.unwrap();
+    verify_daily_challenge_existence(&mut txn1, internal_user_id, &timezone).await?;
+    txn1.commit().await.unwrap();
+
     let pet = retrieve_full_pet(conn, pet_id).await;
     let past_challenges = retrieve_past_challenges(conn, internal_user_id).await?;
     let past_challenges_as_opt = (!past_challenges.is_empty()).then_some(&past_challenges);

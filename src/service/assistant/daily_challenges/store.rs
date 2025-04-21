@@ -22,6 +22,33 @@ where
     Ok(timezone.0)
 }
 
+pub async fn verify_daily_challenge_existence(
+    txn: &mut Transaction<'_, Postgres>,
+    user_id: Uuid,
+    timezone: &str,
+) -> Result<()> {
+    query(format!("SET LOCAL TIME ZONE '{}';", timezone).as_str())
+        .execute(&mut **txn)
+        .await
+        .map_err(super::Error::from)?;
+
+    let challenge_id: Option<(Uuid,)> = query_as(
+        r#"SELECT id FROM user_daily_challenges
+            WHERE user_id = $1 AND created_at::date = CURRENT_DATE;"#,
+    )
+    .bind(user_id)
+    .fetch_optional(&mut **txn)
+    .await
+    .map_err(super::Error::from)?;
+
+    match challenge_id {
+        Some(id) => Err(Error(DailyChallengeError::ChallengeAlreadyCompleted {
+            challenge_id: id.0,
+        })),
+        None => Ok(()),
+    }
+}
+
 pub async fn retrieve_past_challenges<'e, E>(conn: E, user_id: Uuid) -> Result<Vec<String>>
 where
     E: Executor<'e, Database = Postgres>,
@@ -54,8 +81,7 @@ pub async fn save_daily_challenge(
     challenge: &str,
 ) -> Result<Uuid> {
     // Sets the timezone for the current transaction.
-    query("SET LOCAL TIME ZONE '$1';")
-        .bind(timezone)
+    query(format!("SET LOCAL TIME ZONE '{}';", timezone).as_str())
         .execute(&mut **txn) // First, we deref to get the transaction and then deref again to get the connection
         .await
         .map_err(super::Error::from)?;

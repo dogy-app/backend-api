@@ -16,6 +16,7 @@ use derive_more::From;
 use serde::Serialize;
 use serde_with::{serde_as, DisplayFromStr};
 use tracing::debug;
+use uuid::Uuid;
 
 /// Boilerplate Result Type from rust-10x style convention. This result type is used by all axum
 /// handlers.
@@ -105,12 +106,19 @@ pub enum ClientError {
     USER_ALREADY_EXISTS,
 
     /// This error will occur if an authenticated user is not found in the database.
-    USER_NOT_FOUND { user_id: String },
+    USER_NOT_FOUND {
+        user_id: String,
+    },
 
     // Invalid Request Body
     /// This error will occur if a request body is not valid JSON or it did not meet the
     /// requirements for serialization.
     INVALID_REQUEST_BODY(String),
+
+    // Daily Challenge
+    DAILY_CHALLENGE_ALREADY_COMPLETED {
+        challenge_id: Uuid,
+    },
 }
 
 impl IntoResponse for Error {
@@ -154,6 +162,14 @@ impl Error {
             Error::JsonRejection(req_body) => (
                 StatusCode::UNPROCESSABLE_ENTITY,
                 ClientError::INVALID_REQUEST_BODY(req_body.to_string()),
+            ),
+            Error::DailyChallenge(daily_challenges::Error::ChallengeAlreadyCompleted {
+                challenge_id,
+            }) => (
+                StatusCode::CONFLICT,
+                ClientError::DAILY_CHALLENGE_ALREADY_COMPLETED {
+                    challenge_id: *challenge_id,
+                },
             ),
             _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,
