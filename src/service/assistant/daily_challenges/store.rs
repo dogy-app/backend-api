@@ -1,7 +1,7 @@
 use super::Error as DailyChallengeError;
 use crate::Error::DailyChallenge as Error;
 use crate::Result;
-use sqlx::{query_as, Executor, Postgres};
+use sqlx::{query, query_as, Executor, Postgres, Transaction};
 use uuid::Uuid;
 
 // Database
@@ -29,7 +29,7 @@ where
     let past_challenges: Vec<(String,)> = query_as(
         r#"
         SELECT challenge
-        FROM daily_challenges
+        FROM user_daily_challenges
         WHERE user_id = $1
         ORDER BY created_at DESC
         LIMIT 7;
@@ -41,6 +41,39 @@ where
     .map_err(super::Error::from)?;
 
     Ok(past_challenges.into_iter().map(|(c,)| c).collect())
+}
+
+/// Saves the daily challenge for the user.
+///
+/// This requires a Postgres Transaction instead of connection because we are setting the time zone
+/// on a transaction level.
+pub async fn save_daily_challenge(
+    txn: &mut Transaction<'_, Postgres>,
+    user_id: Uuid,
+    timezone: String,
+    challenge: &str,
+) -> Result<Uuid> {
+    // Sets the timezone for the current transaction.
+    query("SET LOCAL TIME ZONE '$1';")
+        .bind(timezone)
+        .execute(&mut **txn) // First, we deref to get the transaction and then deref again to get the connection
+        .await
+        .map_err(super::Error::from)?;
+
+    let challenge_id: (Uuid,) = query_as(
+        r#"
+        INSERT INTO user_daily_challenges (user_id, challenge)
+        VALUES ($1, $2)
+        RETURNING id;
+        "#,
+    )
+    .bind(user_id)
+    .bind(challenge)
+    .fetch_one(&mut **txn)
+    .await
+    .map_err(super::Error::from)?;
+
+    Ok(challenge_id.0)
 }
 
 // AI-related
