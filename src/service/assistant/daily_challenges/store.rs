@@ -1,6 +1,7 @@
 use super::Error as DailyChallengeError;
 use crate::Error::DailyChallenge as Error;
 use crate::Result;
+use chrono::NaiveDate;
 use sqlx::{query, query_as, Executor, Postgres, Transaction};
 use uuid::Uuid;
 
@@ -22,15 +23,22 @@ where
     Ok(timezone.0)
 }
 
+pub async fn set_local_timezone(txn: &mut Transaction<'_, Postgres>, timezone: &str) -> Result<()> {
+    // We cant use bind here because timezone is not a param so we have to use format! macro.
+    query(format!("SET LOCAL TIME ZONE '{}';", timezone).as_str())
+        .execute(&mut **txn) // First, we deref to get the transaction and then deref again to get the connection
+        .await
+        .map_err(super::Error::from)?;
+
+    Ok(())
+}
+
 pub async fn verify_daily_challenge_existence(
     txn: &mut Transaction<'_, Postgres>,
     user_id: Uuid,
     timezone: &str,
 ) -> Result<()> {
-    query(format!("SET LOCAL TIME ZONE '{}';", timezone).as_str())
-        .execute(&mut **txn)
-        .await
-        .map_err(super::Error::from)?;
+    set_local_timezone(txn, timezone).await?;
 
     let challenge_id: Option<(Uuid,)> = query_as(
         r#"SELECT id FROM user_daily_challenges
@@ -70,6 +78,31 @@ where
     Ok(past_challenges.into_iter().map(|(c,)| c).collect())
 }
 
+pub async fn retrieve_daily_challenge_streaks(
+    txn: &mut Transaction<'_, Postgres>,
+    user_id: Uuid,
+    timezone: &str,
+) -> Result<Vec<NaiveDate>> {
+    set_local_timezone(txn, timezone).await?;
+
+    let streaks: Vec<(NaiveDate,)> = query_as(
+        r#"
+        SELECT created_at::date AS challenge_day
+        FROM user_daily_challenges
+        WHERE user_id = $1
+        ORDER BY challenge_day;
+    "#,
+    )
+    .bind(user_id)
+    .fetch_all(&mut **txn)
+    .await
+    .map_err(super::Error::from)?;
+
+    let dates: Vec<NaiveDate> = streaks.into_iter().map(|(d,)| d).collect();
+
+    Ok(dates)
+}
+
 /// Saves the daily challenge for the user.
 ///
 /// This requires a Postgres Transaction instead of connection because we are setting the time zone
@@ -81,10 +114,7 @@ pub async fn save_daily_challenge(
     challenge: &str,
 ) -> Result<Uuid> {
     // Sets the timezone for the current transaction.
-    query(format!("SET LOCAL TIME ZONE '{}';", timezone).as_str())
-        .execute(&mut **txn) // First, we deref to get the transaction and then deref again to get the connection
-        .await
-        .map_err(super::Error::from)?;
+    set_local_timezone(txn, &timezone).await?;
 
     let challenge_id: (Uuid,) = query_as(
         r#"
@@ -120,27 +150,27 @@ Each challenge or fact should be presented in a brief paragraph, clearly stating
 
 ## Examples
 
-### Example 1
-- Type: Trick
-- Challenge: Teach your dog the 'Shake Hands' trick. Start by getting them to sit, then hold a treat in your hand close to their nose. Tap their paw gently while saying 'shake.' When they lift their paw, praise them and give them the treat. Practice this a few times for them to learn.
+### Example 1 (Trick)
+Teach your dog the 'Shake Hands' trick. Start by getting them to sit, then hold a treat in your hand close to their nose. Tap their paw gently while saying 'shake.' When they lift their paw, praise them and give them the treat. Practice this a few times for them to learn.
 
-### Example 2
-- Type: Recipe
-- Challenge: Create a simple dog treat using peanut butter and pumpkin puree. Mix 1 cup of pumpkin puree with 1/4 cup of natural peanut butter. Roll the mixture into small balls and place them on a baking sheet. Freeze for a quick and easy dog snack.
+### Example 2 (Recipe)
+Create a simple dog treat using peanut butter and pumpkin puree. Mix 1 cup of pumpkin puree with 1/4 cup of natural peanut butter. Roll the mixture into small balls and place them on a baking sheet. Freeze for a quick and easy dog snack.
 
-### Example 3
-- Type: Behavior
-- Challenge: Understand your dog's wagging tail. A wagging tail can indicate happiness, but the speed and direction of the wag can signify other emotions like anxiety or excitement. Observe your dog's wagging patterns to better understand their feelings.
+### Example 3 (Behavior)
+Understand your dog's wagging tail. A wagging tail can indicate happiness, but the speed and direction of the wag can signify other emotions like anxiety or excitement. Observe your dog's wagging patterns to better understand their feelings.
 
-### Example 4
-- Type: Fact
-- Fact: Dogs have three eyelids, an upper lid, a lower lid, and a third lid, known as a nictitating membrane or haw, which helps keep the eye moist and protected.
+### Example 4 (Fact)
+Dogs have three eyelids, an upper lid, a lower lid, and a third lid, known as a nictitating membrane or haw, which helps keep the eye moist and protected.
 
 # Notes
 - Customize challenges based on common dog breeds and their attributes for increased relevance.
 - Pay attention to seasonal changes, ensuring that challenges are practical and safe for the current weather.
 - Ensure recipes use dog-safe ingredients only.
-- Dog facts should aim to be surprising or educational."#;
+- Dog facts should aim to be surprising or educational.
+- Only output one challenge.
+- Only output the challenge or fact in paragraph form.
+- Do not include any additional text or explanations and do not exceed 100 words.
+"#;
 
 pub static PET_INFO_PROMPT: &str = r#"
 Here are the details about my pet. Use this information to create a personalized daily challenge or
