@@ -250,7 +250,7 @@ mod test {
 
         response.assert_status(StatusCode::OK);
         response.assert_text("Middleware test succeeded");
-        dbg!(
+        debug!(
             "Host: {}",
             container.get_host_port_ipv4(5432).await.unwrap()
         );
@@ -276,7 +276,7 @@ mod test {
                 "user_id": "user_2ruHSXCzfIRreR2tpttVQBl512a"
             }
         }));
-        dbg!(
+        debug!(
             "Host: {}",
             container.get_host_port_ipv4(5432).await.unwrap()
         );

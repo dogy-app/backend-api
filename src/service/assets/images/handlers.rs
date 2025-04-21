@@ -117,7 +117,7 @@ pub async fn upload_image(
         blob_url = upload_blob(blob_name, &data, content_type).await;
         fallback_name = image_name;
 
-        dbg!(&filename);
+        //dbg!(&filename);
     }
 
     Json(ImageUploadResponse {

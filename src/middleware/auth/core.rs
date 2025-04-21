@@ -1,6 +1,7 @@
 //! This module contains the core functionality of authentication middleware.
 use jsonwebtoken::{decode, DecodingKey, TokenData, Validation};
 use serde::Deserialize;
+use tracing::debug;
 
 use crate::config::load_config;
 
@@ -37,8 +38,8 @@ pub struct Claims {
 /// Decodes a JWT token into a [`TokenData<Claims>`].
 fn decode_jwt(jwt_token: &str) -> Result<TokenData<Claims>> {
     let config = load_config();
-    dbg!("JWT Token: {:?}", jwt_token);
-    dbg!("Config: {:?}", config);
+    debug!("JWT Token: {:?}", jwt_token);
+    debug!("Config: {:?}", config);
     let decoding_key = DecodingKey::from_rsa_components(
         config.CLERK_RSA_MODULUS.as_str(),
         config.CLERK_RSA_EXPONENT.as_str(),
