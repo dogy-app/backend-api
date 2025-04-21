@@ -55,7 +55,7 @@ commit_parsers = [
   { message = "^feat", group = "<!-- 0 -->Features" },
   { message = "^perf", group = "<!-- 1 -->Performance Improvements" },
   { message = "^fix", group = "<!-- 2 -->Bug Fixes" },
-  { message = "^doc", group = "<!-- 3 -->Documentation" },
+  { message = "^docs", group = "<!-- 3 -->Documentation" },
   { message = "^test", group = "<!-- 4 -->Testing" },
   { message = "^ci", group = "<!-- 5 -->CI/CD" },
   { message = "^refactor", group = "<!-- 6 -->Refactor" },

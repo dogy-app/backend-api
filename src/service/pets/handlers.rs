@@ -7,8 +7,12 @@ use uuid::Uuid;
 
 use crate::{middleware::auth::layer::CurrentUser, AppState};
 
-use super::models::{
-    AllFullPet, FullPet, JoinedFullPet, PetAttributes, PetBase, UpdatePetAttributes, UpdatePetBase,
+use super::{
+    models::{
+        AllFullPet, FullPet, JoinedFullPet, PetAttributes, PetBase, UpdatePetAttributes,
+        UpdatePetBase,
+    },
+    store::retrieve_full_pet,
 };
 
 pub async fn create_pet(
@@ -120,49 +124,9 @@ pub async fn get_pet(
     Path(pet_id): Path<Uuid>,
 ) -> Json<FullPet> {
     let conn = &*state.db;
-    let pet = sqlx::query_as::<_, JoinedFullPet>(
-        r#"SELECT p.*, attr.is_sterilized, attr_aggr.aggression_levels,
-          attr_all.allergies, attr_be.behaviors, attr_br.breeds,
-          attr_int.interactions, attr_pe.personalities, attr_re.reactivities
-        FROM pets p
-        LEFT JOIN pet_attrs attr ON p.id = attr.pet_id
-        LEFT JOIN pet_attr_aggression_levels attr_aggr ON attr.id = attr_aggr.pet_attr_id
-        LEFT JOIN pet_attr_allergies attr_all ON attr.id = attr_all.pet_attr_id
-        LEFT JOIN pet_attr_behaviors attr_be ON attr.id = attr_be.pet_attr_id
-        LEFT JOIN pet_attr_breeds attr_br ON attr.id = attr_br.pet_attr_id
-        LEFT JOIN pet_attr_interactions attr_int ON attr.id = attr_int.pet_attr_id
-        LEFT JOIN pet_attr_personalities attr_pe ON attr.id = attr_pe.pet_attr_id
-        LEFT JOIN pet_attr_reactivities attr_re ON attr.id = attr_re.pet_attr_id
-        WHERE p.id = $1;
-        "#,
-    )
-    .bind(pet_id)
-    .fetch_one(conn)
-    .await
-    .unwrap();
+    let pet: FullPet = retrieve_full_pet(conn, pet_id).await;
 
-    Json(FullPet {
-        base: PetBase {
-            pet_id: pet.id,
-            name: pet.name,
-            age: pet.age,
-            gender: pet.gender,
-            size: pet.size,
-            photo_url: pet.photo_url,
-            weight: pet.weight,
-            weight_unit: pet.weight_unit,
-        },
-        attributes: PetAttributes {
-            aggression_levels: pet.aggression_levels,
-            allergies: pet.allergies,
-            breeds: pet.breeds,
-            behaviors: pet.behaviors,
-            interactions: pet.interactions,
-            personalities: pet.personalities,
-            reactivities: pet.reactivities,
-            sterilized: pet.is_sterilized,
-        },
-    })
+    Json(pet)
 }
 
 pub async fn get_all_pets(

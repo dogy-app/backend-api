@@ -2,10 +2,16 @@
 name = "dogy-backend-api"
 version = "0.2.2"
 edition = "2024"
+authors = ["Sheape <sheape@dogy.app>"]
+description = "Backend API for Dogy"
+repository = "https://github.com/dogy-app/backend-api"
 
 [dependencies]
-axum = "0.8.1"
+axum = { version = "0.8.1", features = ["multipart"] }
+azure_storage = "0.21.0"
+azure_storage_blobs = "0.21.0"
 chrono = { version = "0.4.40", features = ["serde"] }
+chrono-tz = "0.10.3"
 derive_more = { version = "2.0.1", features = ["from", "display"] }
 dotenv = "0.15.0"
 futures = "0.3.31"
@@ -20,3 +26,8 @@ tokio = { version = "1.43.0", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
 uuid = { version = "1.16.0", features = ["serde", "v7"] }
+
+[dev-dependencies]
+axum-test = "17.3.0"
+testcontainers = "0.23.3"
+testcontainers-modules = { version = "0.11.6", features = ["postgres"] }

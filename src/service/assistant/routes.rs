@@ -9,8 +9,12 @@ use crate::{
     AppState,
 };
 
-use super::handlers::{
-    get_all_threads_from_user, link_user_to_thread, unlink_thread_from_user, update_thread_title,
+use super::{
+    daily_challenges::routes::root_daily_challenge_routes,
+    handlers::{
+        get_all_threads_from_user, link_user_to_thread, unlink_thread_from_user,
+        update_thread_title,
+    },
 };
 
 async fn thread_routes(app_state: AppState) -> Router<AppState> {
@@ -29,6 +33,12 @@ async fn thread_routes(app_state: AppState) -> Router<AppState> {
         .route_layer(middleware::from_fn(auth_middleware))
 }
 
+pub async fn root_threads_routes(app_state: AppState) -> Router<AppState> {
+    Router::new().nest("/threads", thread_routes(app_state).await)
+}
+
 pub async fn root_assistant_routes(app_state: AppState) -> Router<AppState> {
-    Router::new().nest("/assistant/threads", thread_routes(app_state).await)
+    Router::new()
+        .nest("/assistant", root_threads_routes(app_state.clone()).await)
+        .nest("/assistant", root_daily_challenge_routes(app_state).await)
 }
