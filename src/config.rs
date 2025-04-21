@@ -20,6 +20,8 @@ pub fn load_config() -> &'static Config {
 pub struct Config {
     pub DATABASE_URL: String,
     pub LANGGRAPH_ASSISTANT_ENDPOINT: String,
+    pub AZURE_OPENAI_ENDPOINT: String,
+    pub AZURE_OPENAI_KEY: String,
     pub CLERK_RSA_MODULUS: String,
     pub CLERK_RSA_EXPONENT: String,
     pub STORAGE_ACCOUNT: String,
@@ -33,6 +35,8 @@ impl Config {
         Ok(Self {
             DATABASE_URL: get_env("DATABASE_URL")?,
             LANGGRAPH_ASSISTANT_ENDPOINT: get_env("LANGGRAPH_ASSISTANT_ENDPOINT")?,
+            AZURE_OPENAI_ENDPOINT: get_env("AZURE_OPENAI_ENDPOINT")?,
+            AZURE_OPENAI_KEY: get_env("AZURE_OPENAI_KEY")?,
             CLERK_RSA_MODULUS: get_env("CLERK_RSA_MODULUS")?,
             CLERK_RSA_EXPONENT: get_env("CLERK_RSA_EXPONENT")?,
             STORAGE_ACCOUNT: get_env("STORAGE_ACCOUNT")?,
@@ -99,6 +103,8 @@ mod test {
         unsafe {
             env::set_var("DATABASE_URL", "test_db_url");
             env::set_var("LANGGRAPH_ASSISTANT_ENDPOINT", "test_assistant_url");
+            env::set_var("AZURE_OPENAI_ENDPOINT", "test_azure_openai_endpoint");
+            env::set_var("AZURE_OPENAI_KEY", "test_azure_openai_key");
             env::set_var("CLERK_RSA_MODULUS", "test_modulus");
             env::set_var("CLERK_RSA_EXPONENT", "test_exponent");
             env::set_var("STORAGE_ACCOUNT", "test_storage_acc");
@@ -115,6 +121,8 @@ mod test {
                 CLERK_RSA_EXPONENT: "test_exponent".to_string(),
                 CLERK_RSA_MODULUS: "test_modulus".to_string(),
                 LANGGRAPH_ASSISTANT_ENDPOINT: "test_assistant_url".to_string(),
+                AZURE_OPENAI_ENDPOINT: "test_azure_openai_endpoint".to_string(),
+                AZURE_OPENAI_KEY: "test_azure_openai_key".to_string(),
                 DATABASE_URL: "test_db_url".to_string(),
                 STORAGE_ACCOUNT: "test_storage_acc".to_string(),
                 STORAGE_ACCESS_KEY: "test_storage_key".to_string(),
@@ -143,6 +151,8 @@ mod test {
         unsafe {
             env::set_var("DATABASE_URL", "test_db_url");
             env::set_var("LANGGRAPH_ASSISTANT_ENDPOINT", "test_assistant_url");
+            env::set_var("AZURE_OPENAI_ENDPOINT", "test_azure_openai_endpoint");
+            env::set_var("AZURE_OPENAI_KEY", "test_azure_openai_key");
             env::set_var("CLERK_RSA_MODULUS", "test_modulus");
             env::set_var("CLERK_RSA_EXPONENT", "test_exponent");
             env::set_var("STORAGE_ACCOUNT", "test_storage_acc");
@@ -158,6 +168,8 @@ mod test {
                 CLERK_RSA_EXPONENT: "test_exponent".to_string(),
                 CLERK_RSA_MODULUS: "test_modulus".to_string(),
                 LANGGRAPH_ASSISTANT_ENDPOINT: "test_assistant_url".to_string(),
+                AZURE_OPENAI_ENDPOINT: "test_azure_openai_endpoint".to_string(),
+                AZURE_OPENAI_KEY: "test_azure_openai_key".to_string(),
                 DATABASE_URL: "test_db_url".to_string(),
                 STORAGE_ACCOUNT: "test_storage_acc".to_string(),
                 STORAGE_ACCESS_KEY: "test_storage_key".to_string(),
