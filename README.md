@@ -30,13 +30,6 @@
 - OpenAPI Documentation
 - Code documentation with `docs.rs`
 
-## How to Contribute?
-1. Install rust toolchain (`v1.86.0`).
-2. Create `.env` file add the keys from `.env.example`.
-3. Build the project with `cargo build` or if you are in release mode, `cargo build --release`.
-4. Run the API with `cargo run` to start dev server. Be sure you have a docker image with PostGIS and pg_uuidv7 extension.
-   The auth token will come from the JWT template in clerk dev mode. This is different from the production mode.
-
 ## Usage
 This is a REST API so it should work for any programming language with an HTTP client. I recommend trying the endpoint first in Postman or Insomnia.
 All the endpoints are documented using Scalar. You can find the [documentation](https://dogy.apidocumentation.com/reference) here.
@@ -53,6 +46,13 @@ Here is the database schema with Postgresql Database with PostGIS and pg_uuidv7 
 
 In addition, all Azure services follow the [naming convention](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-naming) from Microsoft themselves. Here is how the cloud services is architectured:
 ![image](https://github.com/user-attachments/assets/197b6c49-e74b-4fb2-98fe-80e9dd9734b2)
+
+## How to Contribute?
+1. Install rust toolchain (`v1.86.0`).
+2. Create `.env` file add the keys from `.env.example`.
+3. Build the project with `cargo build` or if you are in release mode, `cargo build --release`.
+4. Run the API with `cargo run` to start dev server. Be sure you have a docker image with PostGIS and pg_uuidv7 extension.
+   The auth token will come from the JWT template in clerk dev mode. This is different from the production mode.
 
 ## Do you have a question?
 If you have any question or inquiry, feel free to email me or open an issue here. I'll be sure to respond and provide insights given your question.
